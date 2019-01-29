@@ -32,17 +32,32 @@ struct PhraseTrigger : Module {
 };
 
 	PulseGenerator gatePulse;
+	bool gpulse = false;
 	SchmittTrigger clockTrigger;
 	bool running = false;
-    bool val = false ;
+    bool isBeat = false ;
+	int beatCount = 0;
 
 void PhraseTrigger::step() {
 	
-		//printf("well");
-		val = clockTrigger.process(inputs[CLOCK_INPUT].value);
-		if(val == true){
-			printf("%d\n",val);
+		//prototype - every trigger in makes a trigger out
+		isBeat = clockTrigger.process(inputs[CLOCK_INPUT].value);
+		if(isBeat){
+			beatCount++;
+			printf("%d\n",beatCount);
+
+			//trigger will last 1ms
+			gatePulse.trigger(1e-3);
 		}
+		// pulse will trigger on every 5th beat (start of bar)
+		if(gatePulse.process(1.0 / engineGetSampleRate()) && beatCount % 5 == 0){
+			outputs[TRIGGER_OUTPUT].value = 10.0;
+			beatCount = 1;
+		}
+		else{
+			outputs[TRIGGER_OUTPUT].value = 0.0;
+		}
+
 }
 
 
