@@ -1,15 +1,20 @@
+/*
+* Purpose of this module is to allow for timed triggers based on musical timings
+* Musical timings will be based on Phrase, Bar, Beat, and One-Shot
+*
+*/
+
 #include "UL.hpp"
 #include "dsp/digital.hpp"
 
 struct PhraseTrigger : Module {
-	// enum ParamIds {
-	// 	PITCH_PARAM,
-	// 	NUM_PARAMS
-	// };
+		enum ParamIds {
+		ARM_PARAM,
+		NUM_PARAMS
+	 };
 	enum InputIds {
 		CLOCK_INPUT,
 		RESET_INPUT,
-		ARM_INPUT,
 		NUM_INPUTS
 	};
 	enum OutputIds {
@@ -17,12 +22,12 @@ struct PhraseTrigger : Module {
 		NUM_OUTPUTS
 	};
 	enum LightIds {
-		BLINK_LIGHT,
+		ARM_LIGHT,
 		NUM_LIGHTS
 	};
 
 
-	PhraseTrigger() : Module(NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS) {}
+	PhraseTrigger() : Module(NUM_PARAMS,NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS) {}
 	void step() override;
 
 	// For more advanced Module features, read Rack's engine.hpp header file
@@ -34,7 +39,9 @@ struct PhraseTrigger : Module {
 	PulseGenerator gatePulse;
 	bool gpulse = false;
 	SchmittTrigger clockTrigger;
-	bool running = false;
+	SchmittTrigger armTrigger;
+	bool isFirstStep = true; //used to trigger on first step, will need to be fiddled with on reset
+	bool isArmed = false; //for detecting if output is armed
     bool isBeat = false ;
 	int beatCount = 0;
 
@@ -42,20 +49,35 @@ void PhraseTrigger::step() {
 	
 		//prototype - every trigger in makes a trigger out
 		isBeat = clockTrigger.process(inputs[CLOCK_INPUT].value);
+
 		if(isBeat){
-			beatCount++;
 			printf("%d\n",beatCount);
 
 			//trigger will last 1ms
 			gatePulse.trigger(1e-3);
+
 		}
+		
 		// pulse will trigger on every 5th beat (start of bar)
-		if(gatePulse.process(1.0 / engineGetSampleRate()) && beatCount % 5 == 0){
+		// beats: 0, 1, 2, 3 
+		if(gatePulse.process(2.0 / engineGetSampleRate()) && (beatCount == 0)){
 			outputs[TRIGGER_OUTPUT].value = 10.0;
-			beatCount = 1;
 		}
 		else{
 			outputs[TRIGGER_OUTPUT].value = 0.0;
+			}
+
+		//test if arming
+		isArmed = armTrigger.process(params[ARM_PARAM].value);
+			// pulse will trigger on every 5th beat (start of bar)
+			// beats: 0, 1, 2, 3 
+
+		if(isBeat){
+			beatCount++;
+		}
+		if(beatCount > 3){
+			gatePulse.trigger(0);
+			beatCount = 0;
 		}
 
 }
@@ -69,7 +91,7 @@ struct PhraseTriggerWidget : ModuleWidget {
 	//	addChild(Widget::create<ScrewSilver>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, 0)));
 	//	addChild(Widget::create<ScrewSilver>(Vec(RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
 	//	addChild(Widget::create<ScrewSilver>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
-
+		addParam(ParamWidget::create<LEDButton>(Vec(33,20), module, PhraseTrigger::ARM_PARAM, 0.0, 1.0, 0.0));
 	//	addParam(ParamWidget::create<Davies1900hBlackKnob>(Vec(28, 87), module, PhraseTrigger::PITCH_PARAM, -3.0, 3.0, 0.0));
 
 		addInput(Port::create<PJ301MPort>(Vec(33, 186), Port::INPUT, module, PhraseTrigger::CLOCK_INPUT));
