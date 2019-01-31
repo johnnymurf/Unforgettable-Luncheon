@@ -36,48 +36,34 @@ struct PhraseTrigger : Module {
 	// - onReset, onRandomize, onCreate, onDelete: implements special behavior when user clicks these from the context menu
 };
 
-	PulseGenerator gatePulse;
-	bool gpulse = false;
 	SchmittTrigger clockTrigger;
 	SchmittTrigger armTrigger;
-	bool isFirstStep = true; //used to trigger on first step, will need to be fiddled with on reset
 	bool isArmed = false; //for detecting if output is armed
-    bool isBeat = false ;
-	int beatCount = 0;
+    bool isBeat = false ; //will be true for every clock pulse input
+	int beatCount = 1;
 
 void PhraseTrigger::step() {
 	
 		//prototype - every trigger in makes a trigger out
 		isBeat = clockTrigger.process(inputs[CLOCK_INPUT].value);
-
-		if(isBeat){
-			printf("%d\n",beatCount);
-
-			//trigger will last 1ms
-			gatePulse.trigger(1e-3);
-
-		}
-		
-		// pulse will trigger on every 5th beat (start of bar)
-		// beats: 0, 1, 2, 3 
-		if(gatePulse.process(2.0 / engineGetSampleRate()) && (beatCount == 0)){
+		//test if arming
+		isArmed = armTrigger.process(params[ARM_PARAM].value);
+		if((beatCount == 1 && isBeat)){
 			outputs[TRIGGER_OUTPUT].value = 10.0;
 		}
 		else{
 			outputs[TRIGGER_OUTPUT].value = 0.0;
 			}
 
-		//test if arming
-		isArmed = armTrigger.process(params[ARM_PARAM].value);
-			// pulse will trigger on every 5th beat (start of bar)
-			// beats: 0, 1, 2, 3 
 
 		if(isBeat){
+			printf("%d\n",beatCount);
 			beatCount++;
 		}
-		if(beatCount > 3){
-			gatePulse.trigger(0);
-			beatCount = 0;
+		// Test to make a Bar 4 beats long, will be extended to user defined length in future
+		if(beatCount > 4){
+			outputs[TRIGGER_OUTPUT].value = 0.0;
+			beatCount = 1;
 		}
 
 }
@@ -91,10 +77,10 @@ struct PhraseTriggerWidget : ModuleWidget {
 	//	addChild(Widget::create<ScrewSilver>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, 0)));
 	//	addChild(Widget::create<ScrewSilver>(Vec(RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
 	//	addChild(Widget::create<ScrewSilver>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
-		addParam(ParamWidget::create<LEDButton>(Vec(33,20), module, PhraseTrigger::ARM_PARAM, 0.0, 1.0, 0.0));
+		addParam(ParamWidget::create<LEDButton>(Vec(33,180), module, PhraseTrigger::ARM_PARAM, 0.0, 1.0, 0.0));
 	//	addParam(ParamWidget::create<Davies1900hBlackKnob>(Vec(28, 87), module, PhraseTrigger::PITCH_PARAM, -3.0, 3.0, 0.0));
 
-		addInput(Port::create<PJ301MPort>(Vec(33, 186), Port::INPUT, module, PhraseTrigger::CLOCK_INPUT));
+		addInput(Port::create<PJ301MPort>(Vec(33, 30), Port::INPUT, module, PhraseTrigger::CLOCK_INPUT));
 
 		addOutput(Port::create<PJ301MPort>(Vec(33, 275), Port::OUTPUT, module, PhraseTrigger::TRIGGER_OUTPUT));
 
