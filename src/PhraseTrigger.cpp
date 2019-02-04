@@ -38,14 +38,20 @@ struct PhraseTrigger : Module {
 
 	SchmittTrigger clockTrigger;
 	SchmittTrigger armButtonTrigger;
+	PulseGenerator pulseOut; //Used for triggering output pulse
 	bool isArmed = false; //for detecting if output is armed
 	bool armButton = false;
     bool isBeat = false ; //will be true for every clock pulse input
 	int beatCount = 1;
+	float deltaTime = 0;
 
 void PhraseTrigger::step() {
+
+		deltaTime = engineGetSampleTime();
 	
 		armButton = armButtonTrigger.process(params[ARM_PARAM].value);
+		outputs[TRIGGER_OUTPUT].value = pulseOut.process(deltaTime) ? 10.f : 0.f;
+		
 		if(armButton){
 			printf("armButton\n");
 		}
@@ -55,13 +61,11 @@ void PhraseTrigger::step() {
 
 
 		isBeat = clockTrigger.process(inputs[CLOCK_INPUT].value);
+
 		if((beatCount == 1 && isBeat) && isArmed ){
-			outputs[TRIGGER_OUTPUT].value = 10.0;
+			pulseOut.trigger(1e-3);
 			isArmed = false;
 		}
-		else{
-			outputs[TRIGGER_OUTPUT].value = 0.0;
-			}
 
 
 		if(isBeat){
