@@ -37,31 +37,27 @@ struct PhraseTrigger : Module {
 };
 
 	SchmittTrigger clockTrigger;
-	SchmittTrigger armTrigger;
+	SchmittTrigger armButtonTrigger;
 	bool isArmed = false; //for detecting if output is armed
-	bool armInput = false;
+	bool armButton = false;
     bool isBeat = false ; //will be true for every clock pulse input
 	int beatCount = 1;
 
 void PhraseTrigger::step() {
 	
-		//prototype - every trigger in makes a trigger out
-		isBeat = clockTrigger.process(inputs[CLOCK_INPUT].value);
-		//test if arming
-		armInput = armTrigger.process(params[ARM_PARAM].value);
-		if(armInput){
-			printf("armInput\n");
+		armButton = armButtonTrigger.process(params[ARM_PARAM].value);
+		if(armButton){
+			printf("armButton\n");
 		}
-		if(armInput && !isArmed){
+		if(armButton && !isArmed){
 			isArmed = true;
 		}
-		if(isArmed){
-			printf("isArmed\n");
-		}
 
 
+		isBeat = clockTrigger.process(inputs[CLOCK_INPUT].value);
 		if((beatCount == 1 && isBeat) && isArmed ){
 			outputs[TRIGGER_OUTPUT].value = 10.0;
+			isArmed = false;
 		}
 		else{
 			outputs[TRIGGER_OUTPUT].value = 0.0;
