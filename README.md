@@ -1,8 +1,8 @@
-#Unforgettable Lucheon
+# Unforgettable Lucheon
 
-Modules for use with [VCV Rack] https://vcvrack.com/
+Modules for use with [VCV Rack](https://vcvrack.com/)
 
-##Currently in development:
+## Currently in development:
 
 Module that triggers based on user defined phrase length and bar length
 Aim of the module is to provide users the ability to automate modules in VCV
