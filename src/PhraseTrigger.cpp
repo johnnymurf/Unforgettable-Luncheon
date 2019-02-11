@@ -50,7 +50,6 @@ void PhraseTrigger::step() {
 		deltaTime = engineGetSampleTime();
 	
 		armButton = armButtonTrigger.process(params[ARM_PARAM].value);
-		outputs[TRIGGER_OUTPUT].value = pulseOut.process(deltaTime) ? 10.f : 0.f;
 		
 		if(armButton){
 			printf("armButton\n");
@@ -78,6 +77,9 @@ void PhraseTrigger::step() {
 			beatCount = 1;
 		}
 
+		// outputs
+		outputs[TRIGGER_OUTPUT].value = pulseOut.process(deltaTime) ? 10.f : 0.f;
+		lights[ARM_LIGHT].value = isArmed;
 }
 
 
@@ -89,7 +91,11 @@ struct PhraseTriggerWidget : ModuleWidget {
 	//	addChild(Widget::create<ScrewSilver>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, 0)));
 	//	addChild(Widget::create<ScrewSilver>(Vec(RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
 	//	addChild(Widget::create<ScrewSilver>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
-		addParam(ParamWidget::create<LEDButton>(Vec(33,180), module, PhraseTrigger::ARM_PARAM, 0.0, 1.0, 0.0));
+
+	// Create arm button with light
+	// Light must be x+4, y+4 to be centered.
+		addParam(ParamWidget::create<LEDButton>(Vec(36,250), module, PhraseTrigger::ARM_PARAM, 0.0, 1.0, 0.0));
+		addChild(ModuleLightWidget::create<MediumLight<RedLight>>(Vec(40.0f, 254.0f), module, PhraseTrigger::ARM_LIGHT));
 	//	addParam(ParamWidget::create<Davies1900hBlackKnob>(Vec(28, 87), module, PhraseTrigger::PITCH_PARAM, -3.0, 3.0, 0.0));
 
 		addInput(Port::create<PJ301MPort>(Vec(33, 30), Port::INPUT, module, PhraseTrigger::CLOCK_INPUT));
