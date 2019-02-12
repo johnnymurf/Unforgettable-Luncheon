@@ -48,7 +48,7 @@ struct PhraseTrigger : Module {
 void PhraseTrigger::step() {
 
 		deltaTime = engineGetSampleTime();
-	
+		//Check if user as armed button 
 		armButton = armButtonTrigger.process(params[ARM_PARAM].value);
 		
 		if(armButton){
@@ -58,7 +58,7 @@ void PhraseTrigger::step() {
 			isArmed = true;
 		}
 
-
+		//True if input to clock is high (receiving input from clock source) 			
 		isBeat = clockTrigger.process(inputs[CLOCK_INPUT].value);
 
 		if((beatCount == 1 && isBeat) && isArmed ){
