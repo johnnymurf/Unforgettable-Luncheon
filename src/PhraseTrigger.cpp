@@ -54,7 +54,7 @@ void PhraseTrigger::step() {
 
 
 		//Check if user as armed button or sent armed input externally
-		armButton = armButtonTrigger.process(params[ARM_PARAM].value);
+		armInput = armButtonTrigger.process(params[ARM_PARAM].value);
 		armInput = armInputTrigger.process(inputs[ARM_INPUT].value);
 
 
