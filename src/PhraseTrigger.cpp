@@ -15,6 +15,7 @@ struct PhraseTrigger : Module {
 	enum InputIds {
 		CLOCK_INPUT,
 		RESET_INPUT,
+		ARM_INPUT,
 		NUM_INPUTS
 	};
 	enum OutputIds {
@@ -38,9 +39,11 @@ struct PhraseTrigger : Module {
 
 	SchmittTrigger clockTrigger;
 	SchmittTrigger armButtonTrigger;
+	SchmittTrigger armInputTrigger;
 	PulseGenerator pulseOut; //Used for triggering output pulse
 	bool isArmed = false; //for detecting if output is armed
 	bool armButton = false;
+	bool armInput = false;
     bool isBeat = false ; //will be true for every clock pulse input
 	int beatCount = 1;
 	float deltaTime = 0;
@@ -48,15 +51,22 @@ struct PhraseTrigger : Module {
 void PhraseTrigger::step() {
 
 		deltaTime = engineGetSampleTime();
-		//Check if user as armed button 
+
+
+		//Check if user as armed button or sent armed input externally
 		armButton = armButtonTrigger.process(params[ARM_PARAM].value);
-		
-		if(armButton){
-			printf("armButton\n");
+		armInput = armInputTrigger.process(inputs[ARM_INPUT].value);
+
+
+		if(armButton || armInput){
+			printf("armed\n");
 		}
-		if(armButton && !isArmed){
+		if((armButton || armInput) && !isArmed){
 			isArmed = true;
 		}
+
+
+
 
 		//True if input to clock is high (receiving input from clock source) 			
 		isBeat = clockTrigger.process(inputs[CLOCK_INPUT].value);
@@ -65,6 +75,7 @@ void PhraseTrigger::step() {
 			pulseOut.trigger(1e-3);
 			isArmed = false;
 		}
+
 
 
 		if(isBeat){
@@ -99,6 +110,8 @@ struct PhraseTriggerWidget : ModuleWidget {
 	//	addParam(ParamWidget::create<Davies1900hBlackKnob>(Vec(28, 87), module, PhraseTrigger::PITCH_PARAM, -3.0, 3.0, 0.0));
 
 		addInput(Port::create<PJ301MPort>(Vec(33, 30), Port::INPUT, module, PhraseTrigger::CLOCK_INPUT));
+
+		addInput(Port::create<PJ301MPort>(Vec(33, 220), Port::INPUT, module, PhraseTrigger::ARM_INPUT));
 
 		addOutput(Port::create<PJ301MPort>(Vec(33, 275), Port::OUTPUT, module, PhraseTrigger::TRIGGER_OUTPUT));
 
