@@ -8,22 +8,22 @@
 #include "dsp/digital.hpp"
 
 struct PhraseTrigger : Module {
-		enum ParamIds {
-		ARM_PARAM,
-		NUM_PARAMS
+	enum ParamIds {
+			ENUMS(ARM_PARAM, 2),
+			NUM_PARAMS
 	 };
 	enum InputIds {
 		CLOCK_INPUT,
 		RESET_INPUT,
-		ARM_INPUT,
+		ENUMS(ARM_INPUT,2),
 		NUM_INPUTS
 	};
 	enum OutputIds {
-		TRIGGER_OUTPUT,
+		ENUMS(TRIGGER_OUTPUT,2),
 		NUM_OUTPUTS
 	};
 	enum LightIds {
-		ARM_LIGHT,
+		ENUMS(ARM_LIGHT,2),
 		NUM_LIGHTS
 	};
 
@@ -46,6 +46,10 @@ struct PhraseTrigger : Module {
 	bool armInput = false;
     bool isBeat = false ; //will be true for every clock pulse input
 	int beatCount = 1;
+	int barCount = 1;
+	int PhraseCount = 1;
+	int beatsPerBar = 4;
+	int barsPerPhrase = 8;
 	float deltaTime = 0;
 
 void PhraseTrigger::step() {
@@ -54,7 +58,7 @@ void PhraseTrigger::step() {
 
 
 		//Check if user as armed button or sent armed input externally
-		armInput = armButtonTrigger.process(params[ARM_PARAM].value);
+		armButton = armButtonTrigger.process(params[ARM_PARAM].value);
 		armInput = armInputTrigger.process(inputs[ARM_INPUT].value);
 
 
@@ -98,22 +102,21 @@ struct PhraseTriggerWidget : ModuleWidget {
 	PhraseTriggerWidget(PhraseTrigger *module) : ModuleWidget(module) {
 		setPanel(SVG::load(assetPlugin(plugin, "res/PhraseTrigger2.svg")));
 
-	//	addChild(Widget::create<ScrewSilver>(Vec(RACK_GRID_WIDTH, 0)));
-	//	addChild(Widget::create<ScrewSilver>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, 0)));
-	//	addChild(Widget::create<ScrewSilver>(Vec(RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
-	//	addChild(Widget::create<ScrewSilver>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
+		addChild(Widget::create<ScrewSilver>(Vec(RACK_GRID_WIDTH, 0)));
+		addChild(Widget::create<ScrewSilver>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, 0)));
+		addChild(Widget::create<ScrewSilver>(Vec(RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
+		addChild(Widget::create<ScrewSilver>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
 
-	// Create arm button with light
-	// Light must be x+4, y+4 to be centered.
-		addParam(ParamWidget::create<LEDButton>(Vec(36,250), module, PhraseTrigger::ARM_PARAM, 0.0, 1.0, 0.0));
-		addChild(ModuleLightWidget::create<MediumLight<RedLight>>(Vec(40.0f, 254.0f), module, PhraseTrigger::ARM_LIGHT));
-	//	addParam(ParamWidget::create<Davies1900hBlackKnob>(Vec(28, 87), module, PhraseTrigger::PITCH_PARAM, -3.0, 3.0, 0.0));
-
+		//Used for CLock input 
 		addInput(Port::create<PJ301MPort>(Vec(33, 30), Port::INPUT, module, PhraseTrigger::CLOCK_INPUT));
 
-		addInput(Port::create<PJ301MPort>(Vec(33, 220), Port::INPUT, module, PhraseTrigger::ARM_INPUT));
+		//LED button, Light must be x+4, y+4 to be centered.
+		addParam(ParamWidget::create<LEDButton>(Vec(36,100), module, PhraseTrigger::ARM_PARAM, 0.0, 1.0, 0.0));
+		addChild(ModuleLightWidget::create<MediumLight<RedLight>>(Vec(40.0f, 104.0f), module, PhraseTrigger::ARM_LIGHT));
 
-		addOutput(Port::create<PJ301MPort>(Vec(33, 275), Port::OUTPUT, module, PhraseTrigger::TRIGGER_OUTPUT));
+		//External input and Trigger Outputs
+		addInput(Port::create<PJ301MPort>(Vec(33, 120), Port::INPUT, module, PhraseTrigger::ARM_INPUT));
+		addOutput(Port::create<PJ301MPort>(Vec(33, 146), Port::OUTPUT, module, PhraseTrigger::TRIGGER_OUTPUT));
 
 		//addChild(ModuleLightWidget::create<MediumLight<RedLight>>(Vec(41, 59), module, PhraseTrigger::BLINK_LIGHT));
 	}
