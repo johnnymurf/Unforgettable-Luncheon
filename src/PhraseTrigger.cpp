@@ -37,9 +37,13 @@ struct PhraseTrigger : Module {
 
 	SchmittTrigger clockTrigger;
     bool isBeat = false ; //will be true for every clock pulse input
+	// Counts will be used for internal logic, displays will be for graphics
 	int beatCount = 1;
-	int barCount = 1;  
+	int beatDisplay = 1;
+	int barCount = 1; 
+	int barDisplay = 1; 
 	int PhraseCount = 1;
+	int PhraseDisplay
 	int beatsPerBar = 4;
 	int barsPerPhrase = 8;
 	float deltaTime = 0;
@@ -87,6 +91,7 @@ void PhraseTrigger::step() {
 		if(isBeat){
 			printf("%d\n",beatCount);
 			beatCount++;
+			beatDisplay = beatCount - 1; //prevents display from being off by one as it gets updated AFTER beat count incremement 
 			if (beatCount > beatsPerBar){
 				beatCount = 1;
 				barCount++;
@@ -116,16 +121,14 @@ struct BeatsDisplayWidget : TransparentWidget{
 	BeatsDisplayWidget(){
 		font = Font::load(assetPlugin(plugin,"res/DSEG7Classic-Bold.ttf"));
 	}
-
 	void draw(NVGcontext *vg) override{
 		nvgFontSize(vg, 30);
 		nvgFontFaceId(vg, font->handle);
 		nvgTextLetterSpacing(vg, -2);
 
 		nvgFillColor(vg, nvgRGBA(0xff, 0x18, 0x00, 0xff));
-		char text[128];
-	//	printf("BeatCount%d",beat);
-		snprintf(text, sizeof(text), " %1u",((unsigned) *beat) - 1);
+		char text[100];
+		snprintf(text, sizeof(text), " %u",((unsigned) *beat));
 		nvgText(vg, 33, 320, text, NULL);
 	}
 };
@@ -144,9 +147,9 @@ struct PhraseTriggerWidget : ModuleWidget {
 		//Adds graphics to module. Takes values from PhaseTrigger and passes to displayWidgets
 		{
 			BeatsDisplayWidget *beatDisplay = new BeatsDisplayWidget();
-			beatDisplay->beat = &module->beatCount;
-			addChild(beatDisplay);
-		}
+				beatDisplay->beat = (&module->beatDisplay);
+				addChild(beatDisplay);
+				}
 
 		//LED button, Light must be x+4, y+4 to be centered.
 		static const float portY[2] = {100, 200};
