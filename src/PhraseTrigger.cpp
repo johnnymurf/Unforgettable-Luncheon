@@ -7,6 +7,9 @@
 #include "UL.hpp"
 #include "dsp/digital.hpp"
 
+
+
+const int NUM_ARM_MODULUES = 2;
 struct PhraseTrigger : Module {
 	enum ParamIds {
 			ENUMS(ARM_PARAM, 2),
@@ -31,11 +34,6 @@ struct PhraseTrigger : Module {
 	PhraseTrigger() : Module(NUM_PARAMS,NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS) {}
 	void step() override;
 
-	// For more advanced Module features, read Rack's engine.hpp header file
-	//- toJson, fromJson: serialization of internal data
-	// - onSampleRateChange: event triggered by a change of sample rate
-	// - onReset, onRandomize, onCreate, onDelete: implements special behavior when user clicks these from the context menu
-};
 
 	SchmittTrigger clockTrigger;
     bool isBeat = false ; //will be true for every clock pulse input
@@ -45,7 +43,6 @@ struct PhraseTrigger : Module {
 	int beatsPerBar = 4;
 	int barsPerPhrase = 8;
 	float deltaTime = 0;
-	static const int NUM_ARM_MODULUES = 2;
 
 	struct armModule{
 		SchmittTrigger armButtonTrigger;
@@ -55,8 +52,9 @@ struct PhraseTrigger : Module {
 		bool armButton = false;
 		bool armInput = false;
 	};
-	
+
 	armModule armModules[NUM_ARM_MODULUES];	
+};
 
 void PhraseTrigger::step() {
 
@@ -87,6 +85,7 @@ void PhraseTrigger::step() {
 
 // 		TODO - User will determine beatsperBar and barsPerPhrase - default is 4 beats and 8 bars
 		if(isBeat){
+			printf("%d\n",beatCount);
 			beatCount++;
 			if (beatCount > beatsPerBar){
 				beatCount = 1;
@@ -104,9 +103,32 @@ void PhraseTrigger::step() {
 			lights[ARM_LIGHT+ i].value = armModules[i].isArmed;
 		}
 	
+	};
+
+
+// Used to Display Beat Number to the User
+struct BeatsDisplayWidget : TransparentWidget{
+	//PhraseTrigger *module;
+	
+	int *beat;
+	std::shared_ptr<Font> font;
+
+	BeatsDisplayWidget(){
+		font = Font::load(assetPlugin(plugin,"res/DSEG7Classic-Bold.ttf"));
 	}
 
+	void draw(NVGcontext *vg) override{
+		nvgFontSize(vg, 30);
+		nvgFontFaceId(vg, font->handle);
+		nvgTextLetterSpacing(vg, -2);
 
+		nvgFillColor(vg, nvgRGBA(0xff, 0x18, 0x00, 0xff));
+		char text[128];
+	//	printf("BeatCount%d",beat);
+		snprintf(text, sizeof(text), " %1u",((unsigned) *beat) - 1);
+		nvgText(vg, 33, 320, text, NULL);
+	}
+};
 struct PhraseTriggerWidget : ModuleWidget {
 	PhraseTriggerWidget(PhraseTrigger *module) : ModuleWidget(module) {
 		setPanel(SVG::load(assetPlugin(plugin, "res/PhraseTrigger2.svg")));
@@ -118,6 +140,13 @@ struct PhraseTriggerWidget : ModuleWidget {
 
 		//Used for CLock input 
 		addInput(Port::create<PJ301MPort>(Vec(33, 30), Port::INPUT, module, PhraseTrigger::CLOCK_INPUT));
+
+		//Adds graphics to module. Takes values from PhaseTrigger and passes to displayWidgets
+		{
+			BeatsDisplayWidget *beatDisplay = new BeatsDisplayWidget();
+			beatDisplay->beat = &module->beatCount;
+			addChild(beatDisplay);
+		}
 
 		//LED button, Light must be x+4, y+4 to be centered.
 		static const float portY[2] = {100, 200};
