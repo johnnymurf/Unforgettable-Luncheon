@@ -51,6 +51,7 @@ struct PhraseTrigger : Module {
 	int beatsPerBar = 4;
 	int barsPerPhrase = 8;
 	float deltaTime = 0;
+	
 
 void PhraseTrigger::step() {
 
@@ -72,7 +73,7 @@ void PhraseTrigger::step() {
 		isBeat = clockTrigger.process(inputs[CLOCK_INPUT].value);
 		for(int i = 0; i < 2; i++){
 			if((beatCount == 1 && isBeat) && isArmed[i] ){
-				pulseOut[i].trigger(1e-3);
+				pulseOut[i].trigger(1e-3); //pulseOut will be true for 1mss
 				isArmed[i] = false;
 			}
 		}
@@ -86,9 +87,6 @@ void PhraseTrigger::step() {
 
 		// Test to make a Bar 4 beats long, will be extended to user defined length in future
 		if(beatCount > 4){
-			//for(int i = 0; i < 2; i++){
-			//	outputs[TRIGGER_OUTPUT+i].value = 0.0;
-			//}
 			beatCount = 1;
 		}
 
