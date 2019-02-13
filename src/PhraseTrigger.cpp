@@ -65,8 +65,10 @@ struct PhraseTrigger : Module {
 		bool isArmed = false;
 		bool armButton = false;
 		bool armInput = false;
-		bool hasChosenBar = true; //Arm modules will be set trigger on 1st beat of bar by default 
+		bool hasChosenBar = false; 
+		bool isBar = false;
 		bool hasChosenPhrase = false;
+		bool isPhrase = false;
 	};
 
 
@@ -80,10 +82,17 @@ void PhraseTrigger::step() {
 		for(int i = 0; i < NUM_ARM_MODULUES; i++){
 			armModules[i].armButton = armModules[i].armButtonTrigger.process(params[ARM_PARAM+i].value);
 			armModules[i].armInput = armModules[i].armInputTrigger.process(inputs[ARM_INPUT+i].value);
-			armModules[i].hasChosenBar = armModules[i].armBar.process(params[ARM_BAR+i].value);
-			armModules[i].hasChosenPhrase = armModules[i].armPhrase.process(params[ARM_PHRASE + i].value);
+			if(armModules[i].armBar.process(params[ARM_BAR+i].value)){
+				armModules[i].hasChosenBar = true;
+				armModules[i].hasChosenPhrase = false;
+			}
+			if(armModules[i].armPhrase.process(params[ARM_PHRASE+i].value)){
+				armModules[i].hasChosenBar = false;
+				armModules[i].hasChosenPhrase = true;
+			}
 	
 		}
+
 		// On receiving arm input and not already armed, arm module.
 		for(int i = 0; i < NUM_ARM_MODULUES; i++){
 			if((armModules[i].armButton || armModules[i].armInput) && !armModules[i].isArmed){
@@ -120,14 +129,12 @@ void PhraseTrigger::step() {
 				}
 		}
 
-		// outputs - will pulse if on the beat or show light if it is armed
+		// outputs - will pulse if on the beat or show light if it is armed and if its set to output on bar or phrase
 		for(int i = 0; i < NUM_ARM_MODULUES; i++){
 			outputs[TRIGGER_OUTPUT+i].value = armModules[i].pulseOut.process(deltaTime) ? 10.f : 0.f;
 			lights[ARM_LIGHT + i].value = armModules[i].isArmed;
 			lights[ARM_BAR_LIGHTS + i].value = armModules[i].hasChosenBar;
-			if(armModules[i].hasChosenBar){
-				printf("%f\n",lights[ARM_BAR_LIGHTS + i].value);
-			}
+			lights[ARM_PHRASE_LIGHTS + i].value = armModules[i].hasChosenPhrase;
 		}
 	
 	
