@@ -37,13 +37,14 @@ struct PhraseTrigger : Module {
 
 	SchmittTrigger clockTrigger;
     bool isBeat = false ; //will be true for every clock pulse input
+	bool isFirst = true;
 	// Counts will be used for internal logic, displays will be for graphics
 	int beatCount = 1;
-	int beatDisplay = 1;
+	int beatDisplay = 0;
 	int barCount = 1; 
-	int barDisplay = 1; 
+	int barDisplay = 0; 
 	int PhraseCount = 1;
-	int PhraseDisplay
+	int PhraseDisplay = 0;
 	int beatsPerBar = 4;
 	int barsPerPhrase = 8;
 	float deltaTime = 0;
@@ -113,8 +114,7 @@ void PhraseTrigger::step() {
 
 // Used to Display Beat Number to the User
 struct BeatsDisplayWidget : TransparentWidget{
-	//PhraseTrigger *module;
-	
+
 	int *beat;
 	std::shared_ptr<Font> font;
 
@@ -129,7 +129,7 @@ struct BeatsDisplayWidget : TransparentWidget{
 		nvgFillColor(vg, nvgRGBA(0xff, 0x18, 0x00, 0xff));
 		char text[100];
 		snprintf(text, sizeof(text), " %u",((unsigned) *beat));
-		nvgText(vg, 33, 320, text, NULL);
+		nvgText(vg, 30, 320, text, NULL);
 	}
 };
 struct PhraseTriggerWidget : ModuleWidget {
