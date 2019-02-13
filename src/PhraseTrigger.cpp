@@ -38,12 +38,12 @@ struct PhraseTrigger : Module {
 };
 
 	SchmittTrigger clockTrigger;
-	SchmittTrigger armButtonTrigger;
-	SchmittTrigger armInputTrigger;
-	PulseGenerator pulseOut; //Used for triggering output pulse
-	bool isArmed = false; //for detecting if output is armed
-	bool armButton = false;
-	bool armInput = false;
+	SchmittTrigger armButtonTrigger[2];
+	SchmittTrigger armInputTrigger[2];
+	PulseGenerator pulseOut[2]; //Used for triggering output pulse
+	bool isArmed[2] = {false,false}; //for detecting if output is armed
+	bool armButton[2] = {false,false};
+	bool armInput[2] = {false,false};
     bool isBeat = false ; //will be true for every clock pulse input
 	int beatCount = 1;
 	int barCount = 1;
@@ -58,26 +58,23 @@ void PhraseTrigger::step() {
 
 
 		//Check if user as armed button or sent armed input externally
-		armButton = armButtonTrigger.process(params[ARM_PARAM].value);
-		armInput = armInputTrigger.process(inputs[ARM_INPUT].value);
-
-
-		if(armButton || armInput){
-			printf("armed\n");
+		for(int i = 0; i < 2; i++){
+			armButton[i] = armButtonTrigger[i].process(params[ARM_PARAM+i].value);
+			armInput[i] = armInputTrigger[i].process(inputs[ARM_INPUT+i].value);
+			
+			if((armButton[i] || armInput[i]) && !isArmed[i]){
+		 		isArmed[i] = true;
+		 	}
 		}
-		if((armButton || armInput) && !isArmed){
-			isArmed = true;
-		}
-
-
 
 
 		//True if input to clock is high (receiving input from clock source) 			
 		isBeat = clockTrigger.process(inputs[CLOCK_INPUT].value);
-
-		if((beatCount == 1 && isBeat) && isArmed ){
-			pulseOut.trigger(1e-3);
-			isArmed = false;
+		for(int i = 0; i < 2; i++){
+			if((beatCount == 1 && isBeat) && isArmed[i] ){
+				pulseOut[i].trigger(1e-3);
+				isArmed[i] = false;
+			}
 		}
 
 
@@ -86,15 +83,20 @@ void PhraseTrigger::step() {
 			printf("%d\n",beatCount);
 			beatCount++;
 		}
+
 		// Test to make a Bar 4 beats long, will be extended to user defined length in future
 		if(beatCount > 4){
-			outputs[TRIGGER_OUTPUT].value = 0.0;
+			//for(int i = 0; i < 2; i++){
+			//	outputs[TRIGGER_OUTPUT+i].value = 0.0;
+			//}
 			beatCount = 1;
 		}
 
-		// outputs
-		outputs[TRIGGER_OUTPUT].value = pulseOut.process(deltaTime) ? 10.f : 0.f;
-		lights[ARM_LIGHT].value = isArmed;
+		// outputs - will pulse if on the beat or show light if it is armed
+		for(int i = 0; i < 2; i++){
+			outputs[TRIGGER_OUTPUT+i].value = pulseOut[i].process(deltaTime) ? 10.f : 0.f;
+			lights[ARM_LIGHT+ i].value = isArmed[i];
+		}
 }
 
 
@@ -111,13 +113,15 @@ struct PhraseTriggerWidget : ModuleWidget {
 		addInput(Port::create<PJ301MPort>(Vec(33, 30), Port::INPUT, module, PhraseTrigger::CLOCK_INPUT));
 
 		//LED button, Light must be x+4, y+4 to be centered.
-		addParam(ParamWidget::create<LEDButton>(Vec(36,100), module, PhraseTrigger::ARM_PARAM, 0.0, 1.0, 0.0));
-		addChild(ModuleLightWidget::create<MediumLight<RedLight>>(Vec(40.0f, 104.0f), module, PhraseTrigger::ARM_LIGHT));
+		static const float port[2] = {100, 170};
+		for(int i = 0; i < 2; i++){
+			addParam(ParamWidget::create<LEDButton>(Vec(36,port[i]), module, PhraseTrigger::ARM_PARAM + i, 0.0, 1.0, 0.0));
+			addChild(ModuleLightWidget::create<MediumLight<RedLight>>(Vec(40.0f, port[i] + 4.0f), module, PhraseTrigger::ARM_LIGHT + i));
 
-		//External input and Trigger Outputs
-		addInput(Port::create<PJ301MPort>(Vec(33, 120), Port::INPUT, module, PhraseTrigger::ARM_INPUT));
-		addOutput(Port::create<PJ301MPort>(Vec(33, 146), Port::OUTPUT, module, PhraseTrigger::TRIGGER_OUTPUT));
-
+			//External input and Trigger Outputs
+			addInput(Port::create<PJ301MPort>(Vec(33, port[i] + 20), Port::INPUT, module, PhraseTrigger::ARM_INPUT + i));
+			addOutput(Port::create<PJ301MPort>(Vec(33, port[i] + 46), Port::OUTPUT, module, PhraseTrigger::TRIGGER_OUTPUT + i));
+		}
 		//addChild(ModuleLightWidget::create<MediumLight<RedLight>>(Vec(41, 59), module, PhraseTrigger::BLINK_LIGHT));
 	}
 };
