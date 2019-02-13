@@ -38,12 +38,6 @@ struct PhraseTrigger : Module {
 };
 
 	SchmittTrigger clockTrigger;
-	SchmittTrigger armButtonTrigger[2];
-	SchmittTrigger armInputTrigger[2];
-	PulseGenerator pulseOut[2]; //Used for triggering output pulse
-	bool isArmed[2] = {false,false}; //for detecting if output is armed
-	bool armButton[2] = {false,false};
-	bool armInput[2] = {false,false};
     bool isBeat = false ; //will be true for every clock pulse input
 	int beatCount = 1;
 	int barCount = 1;  
@@ -51,51 +45,66 @@ struct PhraseTrigger : Module {
 	int beatsPerBar = 4;
 	int barsPerPhrase = 8;
 	float deltaTime = 0;
+	static const int NUM_ARM_MODULUES = 2;
+
+	struct armModule{
+		SchmittTrigger armButtonTrigger;
+		SchmittTrigger armInputTrigger;
+		PulseGenerator pulseOut;
+		bool isArmed = false;
+		bool armButton = false;
+		bool armInput = false;
+	};
 	
+	armModule armModules[NUM_ARM_MODULUES];	
 
 void PhraseTrigger::step() {
 
 		deltaTime = engineGetSampleTime();
 
-
 		//Check if user as armed button or sent armed input externally
-		for(int i = 0; i < 2; i++){
-			armButton[i] = armButtonTrigger[i].process(params[ARM_PARAM+i].value);
-			armInput[i] = armInputTrigger[i].process(inputs[ARM_INPUT+i].value);
-			
-			if((armButton[i] || armInput[i]) && !isArmed[i]){
-		 		isArmed[i] = true;
+		for(int i = 0; i < NUM_ARM_MODULUES; i++){
+			armModules[i].armButton = armModules[i].armButtonTrigger.process(params[ARM_PARAM+i].value);
+			armModules[i].armInput = armModules[i].armInputTrigger.process(inputs[ARM_INPUT+i].value);
+		}
+		for(int i = 0; i < NUM_ARM_MODULUES; i++){
+			if((armModules[i].armButton || armModules[i].armInput) && !armModules[i].isArmed){
+		 		armModules[i].isArmed = true;
 		 	}
 		}
-
+	
 
 		//True if input to clock is high (receiving input from clock source) 			
 		isBeat = clockTrigger.process(inputs[CLOCK_INPUT].value);
-		for(int i = 0; i < 2; i++){
-			if((beatCount == 1 && isBeat) && isArmed[i] ){
-				pulseOut[i].trigger(1e-3); //pulseOut will be true for 1mss
-				isArmed[i] = false;
+		
+		for(int i = 0; i < NUM_ARM_MODULUES; i++){
+			if((beatCount == 1 && isBeat) && armModules[i].isArmed ){
+				armModules[i].pulseOut.trigger(1e-3); //pulseOut will be true for 1mss
+				armModules[i].isArmed = false;
 			}
 		}
 
 
-
+// 		TODO - User will determine beatsperBar and barsPerPhrase - default is 4 beats and 8 bars
 		if(isBeat){
-			printf("%d\n",beatCount);
 			beatCount++;
-		}
-
-		// Test to make a Bar 4 beats long, will be extended to user defined length in future
-		if(beatCount > 4){
-			beatCount = 1;
+			if (beatCount > beatsPerBar){
+				beatCount = 1;
+				barCount++;
+			}
+				if (barCount > barsPerPhrase ){
+					barCount = 1;
+					PhraseCount++;
+				}
 		}
 
 		// outputs - will pulse if on the beat or show light if it is armed
-		for(int i = 0; i < 2; i++){
-			outputs[TRIGGER_OUTPUT+i].value = pulseOut[i].process(deltaTime) ? 10.f : 0.f;
-			lights[ARM_LIGHT+ i].value = isArmed[i];
+		for(int i = 0; i < NUM_ARM_MODULUES; i++){
+			outputs[TRIGGER_OUTPUT+i].value = armModules[i].pulseOut.process(deltaTime) ? 10.f : 0.f;
+			lights[ARM_LIGHT+ i].value = armModules[i].isArmed;
 		}
-}
+	
+	}
 
 
 struct PhraseTriggerWidget : ModuleWidget {
@@ -112,7 +121,7 @@ struct PhraseTriggerWidget : ModuleWidget {
 
 		//LED button, Light must be x+4, y+4 to be centered.
 		static const float portY[2] = {100, 200};
-		for(int i = 0; i < 2; i++){
+		for(int i = 0; i < NUM_ARM_MODULUES; i++){
 			addParam(ParamWidget::create<LEDButton>(Vec(36,portY[i]), module, PhraseTrigger::ARM_PARAM + i, 0.0, 1.0, 0.0));
 			addChild(ModuleLightWidget::create<MediumLight<RedLight>>(Vec(40.0f, portY[i] + 4.0f), module, PhraseTrigger::ARM_LIGHT + i));
 
