@@ -46,7 +46,7 @@ struct PhraseTrigger : Module {
 	bool armInput[2] = {false,false};
     bool isBeat = false ; //will be true for every clock pulse input
 	int beatCount = 1;
-	int barCount = 1;
+	int barCount = 1;  
 	int PhraseCount = 1;
 	int beatsPerBar = 4;
 	int barsPerPhrase = 8;
@@ -113,14 +113,14 @@ struct PhraseTriggerWidget : ModuleWidget {
 		addInput(Port::create<PJ301MPort>(Vec(33, 30), Port::INPUT, module, PhraseTrigger::CLOCK_INPUT));
 
 		//LED button, Light must be x+4, y+4 to be centered.
-		static const float port[2] = {100, 170};
+		static const float portY[2] = {100, 200};
 		for(int i = 0; i < 2; i++){
-			addParam(ParamWidget::create<LEDButton>(Vec(36,port[i]), module, PhraseTrigger::ARM_PARAM + i, 0.0, 1.0, 0.0));
-			addChild(ModuleLightWidget::create<MediumLight<RedLight>>(Vec(40.0f, port[i] + 4.0f), module, PhraseTrigger::ARM_LIGHT + i));
+			addParam(ParamWidget::create<LEDButton>(Vec(36,portY[i]), module, PhraseTrigger::ARM_PARAM + i, 0.0, 1.0, 0.0));
+			addChild(ModuleLightWidget::create<MediumLight<RedLight>>(Vec(40.0f, portY[i] + 4.0f), module, PhraseTrigger::ARM_LIGHT + i));
 
 			//External input and Trigger Outputs
-			addInput(Port::create<PJ301MPort>(Vec(33, port[i] + 20), Port::INPUT, module, PhraseTrigger::ARM_INPUT + i));
-			addOutput(Port::create<PJ301MPort>(Vec(33, port[i] + 46), Port::OUTPUT, module, PhraseTrigger::TRIGGER_OUTPUT + i));
+			addInput(Port::create<PJ301MPort>(Vec(33, portY[i] + 20), Port::INPUT, module, PhraseTrigger::ARM_INPUT + i));
+			addOutput(Port::create<PJ301MPort>(Vec(33, portY[i] + 46), Port::OUTPUT, module, PhraseTrigger::TRIGGER_OUTPUT + i));
 		}
 		//addChild(ModuleLightWidget::create<MediumLight<RedLight>>(Vec(41, 59), module, PhraseTrigger::BLINK_LIGHT));
 	}
