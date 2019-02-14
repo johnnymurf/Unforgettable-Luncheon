@@ -53,7 +53,7 @@ struct PhraseTrigger : Module {
 	int beatsPerBar = 4;
 	int barsPerPhrase = 8;
 	float deltaTime = 0;
-	int totalBeats = 0;
+	int totalBeats = 1;
 
 	struct armModule{
 		SchmittTrigger armButtonTrigger;
@@ -65,10 +65,10 @@ struct PhraseTrigger : Module {
 		bool isArmed = false;
 		bool armButton = false;
 		bool armInput = false;
-		bool hasChosenBar = false; 
-		bool isBar = false;
+		bool hasChosenBar = true; //default will be trigger on bar  
+	//	bool isBar = false;
 		bool hasChosenPhrase = false;
-		bool isPhrase = false;
+	//	bool isPhrase = false;
 	};
 
 
@@ -103,12 +103,19 @@ void PhraseTrigger::step() {
 		isBeat = clockTrigger.process(inputs[CLOCK_INPUT].value);
 		
 
-		// TODO - user selects if module will trigger on start of bar or start of phrase
 		for(int i = 0; i < NUM_ARM_MODULUES; i++){
-			if((beatCount == 1 && isBeat) && armModules[i].isArmed ){
+			
+			// trigger if set to phrase
+			if((barCount == 1 && beatCount == 1) &&  isBeat && armModules[i].hasChosenPhrase && armModules[i].isArmed){
+			 	armModules[i].pulseOut.trigger(1e-3); //pulseOut will be true for 1mss
+			 	armModules[i].isArmed = false;
+			 }
+			//  trigger if set to bar
+			if( (beatCount == 1) && isBeat && armModules[i].hasChosenBar && armModules[i].isArmed){
 				armModules[i].pulseOut.trigger(1e-3); //pulseOut will be true for 1mss
-				armModules[i].isArmed = false; // pulse sent from armed module, no need to keep armed or will retrigger
+				armModules[i].isArmed = false;
 			}
+
 		}
 
 
@@ -165,7 +172,7 @@ struct BeatsDisplayWidget : TransparentWidget{
 
 struct PhraseTriggerWidget : ModuleWidget {
 	PhraseTriggerWidget(PhraseTrigger *module) : ModuleWidget(module) {
-		setPanel(SVG::load(assetPlugin(plugin, "res/PhraseTrigger2.svg")));
+		setPanel(SVG::load(assetPlugin(plugin, "res/PhraseTrigger3.svg")));
 
 		addChild(Widget::create<ScrewSilver>(Vec(RACK_GRID_WIDTH, 0)));
 		addChild(Widget::create<ScrewSilver>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, 0)));
@@ -179,6 +186,7 @@ struct PhraseTriggerWidget : ModuleWidget {
 		{
 			BeatsDisplayWidget *beatDisplay = new BeatsDisplayWidget();
 				beatDisplay->beat = (&module->beatDisplay);
+				
 				addChild(beatDisplay);
 				}
 
@@ -195,7 +203,7 @@ struct PhraseTriggerWidget : ModuleWidget {
 			addInput(Port::create<PJ301MPort>(Vec(33, portY[i] + 20), Port::INPUT, module, PhraseTrigger::ARM_INPUT + i));// takes input to arm module (useful for MIDI)
 
 			addParam(ParamWidget::create<LEDButton>(Vec(portX[i] + 52, portY[i] + 20), module, PhraseTrigger::ARM_PHRASE + i,0.0, 1.0, 0.0));//select to trigger on phrase
-			addChild(ModuleLightWidget::create<MediumLight<GreenLight>>(Vec(portX[i]+56.0f,portY[i]+24),module, PhraseTrigger::ARM_PHRASE_LIGHTS + i));
+			addChild(ModuleLightWidget::create<MediumLight<BlueLight>>(Vec(portX[i]+56.0f,portY[i]+24),module, PhraseTrigger::ARM_PHRASE_LIGHTS + i));
 
 
 			addOutput(Port::create<PJ301MPort>(Vec(33, portY[i] + 46), Port::OUTPUT, module, PhraseTrigger::TRIGGER_OUTPUT + i));
