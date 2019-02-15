@@ -10,9 +10,11 @@
 
 
 
-const int NUM_ARM_MODULUES = 4;
+const int NUM_ARM_MODULUES = 12;
+const int NUM_ROWS = 3;
 struct PhraseTrigger : Module {
 	enum ParamIds {
+		RESET_PARAM,
 		ENUMS(ARM_PARAM, NUM_ARM_MODULUES),
 		ENUMS(ARM_BAR, NUM_ARM_MODULUES),
 		ENUMS(ARM_PHRASE, NUM_ARM_MODULUES),
@@ -23,8 +25,6 @@ struct PhraseTrigger : Module {
 		CLOCK_INPUT,
 		RESET_INPUT,
 		ENUMS(ARM_INPUT,NUM_ARM_MODULUES),
-	//	ENUMS(BAR_INPUT,NUM_ARM_MODULUES),
-	//	ENUMS(PHRASE_INPUTS,NUM_ARM_MODULUES),
 		NUM_INPUTS
 	};
 	enum OutputIds {
@@ -32,6 +32,7 @@ struct PhraseTrigger : Module {
 		NUM_OUTPUTS
 	};
 	enum LightIds {
+		RESET_LIGHT,
 		ENUMS(ARM_LIGHT,NUM_ARM_MODULUES),
 		ENUMS(ARM_BAR_LIGHTS, NUM_ARM_MODULUES),
 		ENUMS(ARM_PHRASE_LIGHTS, NUM_ARM_MODULUES),
@@ -44,7 +45,10 @@ struct PhraseTrigger : Module {
 
 
 	SchmittTrigger clockTrigger;
+	SchmittTrigger resetTrigger;
+	SchmittTrigger resetButton;
     bool isBeat = false ; //will be true for every clock pulse input
+	bool isReset = false;
 	// Counts will be used for internal logic, displays will be for graphics
 	int beatCount = 1;
 	int beatDisplay = 0;
@@ -68,9 +72,7 @@ struct PhraseTrigger : Module {
 		bool armButton = false;
 		bool armInput = false;
 		bool hasChosenBar = true; //default will be trigger on bar  
-	//	bool isBar = false;
 		bool hasChosenPhrase = false;
-	//	bool isPhrase = false;
 	};
 
 
@@ -103,12 +105,17 @@ void PhraseTrigger::step() {
 		}
 		//True if input to clock is high (receiving input from clock source) 			
 		isBeat = clockTrigger.process(inputs[CLOCK_INPUT].value);
+
+		if( resetTrigger.process(inputs[RESET_INPUT].value)  || resetButton.process(params[RESET_PARAM].value) ){
+			beatCount = 1; 
+			barCount = 1;
+			phraseCount = 1;
+			beatDisplay = beatCount - 1;
+			barDisplay = barCount;
+			phraseDisplay = phraseCount;
+		}
 		
 		for(int i = 0; i < NUM_ARM_MODULUES; i++){
-			// if((beatCount == 1 && isBeat) && armModules[i].isArmed ){
-			// 	armModules[i].pulseOut.trigger(1e-3); //pulseOut will be true for 1mss
-			// 	armModules[i].isArmed = false; // pulse sent from armed module, no need to keep armed or will retrigger
-			// }
 			if((barCount == 1 && beatCount == 1) &&  isBeat && armModules[i].hasChosenPhrase && armModules[i].isArmed){
 			 	armModules[i].pulseOut.trigger(1e-3); //pulseOut will be true for 1mss
 			 	armModules[i].isArmed = false;
@@ -119,11 +126,11 @@ void PhraseTrigger::step() {
 			}
 
 		}
+		
 
-		if(isBeat){
+		if(isBeat && !resetButton.process(params[RESET_PARAM].value) ){
 			barDisplay = barCount;
 			phraseDisplay = phraseCount;
-
 			beatCount++;
 			totalBeats++; 
 			beatDisplay = beatCount - 1; //prevents display from being off by one as it gets updated AFTER beat count incremement 
@@ -137,6 +144,7 @@ void PhraseTrigger::step() {
 					phraseCount++;
 				}
 		}
+		
 
 		// outputs - will pulse if on the beat or show light if it is armed and if its set to output on bar or phrase
 		for(int i = 0; i < NUM_ARM_MODULUES; i++){
@@ -145,8 +153,8 @@ void PhraseTrigger::step() {
 			lights[ARM_BAR_LIGHTS + i].value = armModules[i].hasChosenBar;
 			lights[ARM_PHRASE_LIGHTS + i].value = armModules[i].hasChosenPhrase;
 		}
-	
-	
+		lights[RESET_LIGHT].setBrightnessSmooth(resetTrigger.isHigh());
+		lights[RESET_LIGHT].setBrightnessSmooth(resetButton.isHigh());
 
 	};
 // Used to Display Beat Number to the User
@@ -164,7 +172,7 @@ struct TimeDisplayWidget : TransparentWidget{
 		nvgFontSize(vg, 20);
 		nvgFontFaceId(vg, font->handle);
 		nvgTextLetterSpacing(vg, 2);
-		Vec textPos = Vec(100,40);
+		Vec textPos = Vec(140,40);
 		nvgFillColor(vg, nvgRGBA(0xff, 0x18, 0x00, 0xff));
 		char text[250];
 		snprintf(text, sizeof(text), "%02u  :  %02u  :  %02u",((unsigned) *phrase),((unsigned) *bar),((unsigned) *beat));
@@ -185,35 +193,68 @@ struct PhraseTriggerWidget : ModuleWidget {
 
 		//Used for CLock input 
 		addInput(Port::create<PJ301MPort>(Vec(33, 20), Port::INPUT, module, PhraseTrigger::CLOCK_INPUT));
+		addInput(Port::create<PJ301MPort>(Vec(33, 50), Port::INPUT, module, PhraseTrigger::RESET_INPUT));
+		addParam(ParamWidget::create<LEDButton>(Vec(10,53), module, PhraseTrigger::RESET_PARAM, 0.0, 1.0, 0.0));//arm button
+		addChild(ModuleLightWidget::create<MediumLight<RedLight>>(Vec(14,57),module, PhraseTrigger::RESET_LIGHT));
+
 
 		//Adds graphics to module. Takes values from PhaseTrigger and passes to displayWidgets
 		{
-		 TimeDisplayWidget *beatDisplay = new TimeDisplayWidget();
-				beatDisplay->beat = (&module->beatDisplay);
-				beatDisplay->bar = &module->barDisplay;
-				beatDisplay->phrase = &module->phraseDisplay;
-				addChild(beatDisplay);
-				}
+		 	TimeDisplayWidget *beatDisplay = new TimeDisplayWidget();
+			beatDisplay->beat = (&module->beatDisplay);
+			beatDisplay->bar = &module->barDisplay;
+			beatDisplay->phrase = &module->phraseDisplay;
+			addChild(beatDisplay);
+		}
 
 		//For LED buttons, child Light must be x+4, y+4 to be centered
 		static const  float portX[4] = {10, 100, 190, 280};
-		static const float portY[4] = {100, 100, 100, 100};
-		for(int i = 0; i < NUM_ARM_MODULUES; i++){
-			addParam(ParamWidget::create<LEDButton>(Vec(portX[i],portY[i] + 20), module, PhraseTrigger::ARM_BAR + i,0.0, 1.0, 0.0));//select to trigger on bar
-			addChild(ModuleLightWidget::create<MediumLight<GreenLight>>(Vec(portX[i]+4.0f,portY[i]+24),module, PhraseTrigger::ARM_BAR_LIGHTS + i));
-
-			addParam(ParamWidget::create<LEDButton>(Vec(portX[i]+26,portY[i]), module, PhraseTrigger::ARM_PARAM + i, 0.0, 1.0, 0.0));//arm button
-			addChild(ModuleLightWidget::create<MediumLight<RedLight>>(Vec(portX[i]+30.0f, portY[i] + 4.0f), module, PhraseTrigger::ARM_LIGHT + i));//arm button light
-			
-			addInput(Port::create<PJ301MPort>(Vec((portX[i] + 23), portY[i] + 24), Port::INPUT, module, PhraseTrigger::ARM_INPUT + i));// takes input to arm module (useful for MIDI)
-
-			addParam(ParamWidget::create<LEDButton>(Vec(portX[i] + 52, portY[i] + 20), module, PhraseTrigger::ARM_PHRASE + i,0.0, 1.0, 0.0));//select to trigger on phrase
-			addChild(ModuleLightWidget::create<MediumLight<BlueLight>>(Vec(portX[i]+56.0f,portY[i]+24),module, PhraseTrigger::ARM_PHRASE_LIGHTS + i));
-
-
-			addOutput(Port::create<PJ301MPort>(Vec(portX[i] + 23, portY[i] + 52), Port::OUTPUT, module, PhraseTrigger::TRIGGER_OUTPUT + i));
+		int count = 0;
+		static const float row1Y = 100;
+		for(int i = 0; i < NUM_ARM_MODULUES/NUM_ROWS; i++){
+			// left button
+			addParam(ParamWidget::create<LEDButton>(Vec(portX[i],row1Y + 20), module, PhraseTrigger::ARM_BAR + i,0.0, 1.0, 0.0));//select to trigger on bar
+			addChild(ModuleLightWidget::create<MediumLight<GreenLight>>(Vec(portX[i]+4.0f,row1Y+24),module, PhraseTrigger::ARM_BAR_LIGHTS + i));
+			//top button
+			addParam(ParamWidget::create<LEDButton>(Vec(portX[i]+26,row1Y), module, PhraseTrigger::ARM_PARAM + i, 0.0, 1.0, 0.0));//arm button
+			addChild(ModuleLightWidget::create<MediumLight<RedLight>>(Vec(portX[i]+30.0f, row1Y + 4.0f), module, PhraseTrigger::ARM_LIGHT + i));//arm button light
+			addInput(Port::create<PJ301MPort>(Vec((portX[i] + 23), row1Y + 24), Port::INPUT, module, PhraseTrigger::ARM_INPUT + i));// takes input to arm module (useful for MIDI)
+			//right button
+			addParam(ParamWidget::create<LEDButton>(Vec(portX[i] + 52, row1Y + 20), module, PhraseTrigger::ARM_PHRASE + i,0.0, 1.0, 0.0));//select to trigger on phrase
+			addChild(ModuleLightWidget::create<MediumLight<BlueLight>>(Vec(portX[i]+56.0f,row1Y+24),module, PhraseTrigger::ARM_PHRASE_LIGHTS + i));
+			addOutput(Port::create<PJ301MPort>(Vec(portX[i] + 23, row1Y + 52), Port::OUTPUT, module, PhraseTrigger::TRIGGER_OUTPUT + i));
+			count++;
 		}
-		//addChild(ModuleLightWidget::create<MediumLight<RedLight>>(Vec(41, 59), module, PhraseTrigger::BLINK_LIGHT));
+		static const float row2Y = 190;
+		for(int i = 0; i < NUM_ARM_MODULUES/NUM_ROWS; i++){
+			// left button
+			addParam(ParamWidget::create<LEDButton>(Vec(portX[i],row2Y + 20), module, PhraseTrigger::ARM_BAR + count,0.0, 1.0, 0.0));//select to trigger on bar
+			addChild(ModuleLightWidget::create<MediumLight<GreenLight>>(Vec(portX[i]+4.0f,row2Y+24),module, PhraseTrigger::ARM_BAR_LIGHTS + count));
+			//top button
+			addParam(ParamWidget::create<LEDButton>(Vec(portX[i]+26,row2Y), module, PhraseTrigger::ARM_PARAM + count, 0.0, 1.0, 0.0));//arm button
+			addChild(ModuleLightWidget::create<MediumLight<RedLight>>(Vec(portX[i]+30.0f, row2Y + 4.0f), module, PhraseTrigger::ARM_LIGHT + count));//arm button light
+			addInput(Port::create<PJ301MPort>(Vec((portX[i] + 23), row2Y + 24), Port::INPUT, module, PhraseTrigger::ARM_INPUT + count));// takes input to arm module (useful for MIDI)
+			//right button
+			addParam(ParamWidget::create<LEDButton>(Vec(portX[i] + 52, row2Y + 20), module, PhraseTrigger::ARM_PHRASE + count,0.0, 1.0, 0.0));//select to trigger on phrase
+			addChild(ModuleLightWidget::create<MediumLight<BlueLight>>(Vec(portX[i]+56.0f,row2Y+24),module, PhraseTrigger::ARM_PHRASE_LIGHTS + count));
+			addOutput(Port::create<PJ301MPort>(Vec(portX[i] + 23, row2Y + 52), Port::OUTPUT, module, PhraseTrigger::TRIGGER_OUTPUT + count));
+			count++;
+		}
+		static const float row3Y = 280;
+		for(int i = 0; i < NUM_ARM_MODULUES/NUM_ROWS; i++){
+			// left button
+			addParam(ParamWidget::create<LEDButton>(Vec(portX[i],row3Y + 20), module, PhraseTrigger::ARM_BAR + count,0.0, 1.0, 0.0));//select to trigger on bar
+			addChild(ModuleLightWidget::create<MediumLight<GreenLight>>(Vec(portX[i]+4.0f,row3Y+24),module, PhraseTrigger::ARM_BAR_LIGHTS + count));
+			//top button
+			addParam(ParamWidget::create<LEDButton>(Vec(portX[i]+26,row3Y), module, PhraseTrigger::ARM_PARAM +count, 0.0, 1.0, 0.0));//arm button
+			addChild(ModuleLightWidget::create<MediumLight<RedLight>>(Vec(portX[i]+30.0f, row3Y + 4.0f), module, PhraseTrigger::ARM_LIGHT + count));//arm button light
+			addInput(Port::create<PJ301MPort>(Vec((portX[i] + 23), row3Y + 24), Port::INPUT, module, PhraseTrigger::ARM_INPUT + count));// takes input to arm module (useful for MIDI)
+			//right button
+			addParam(ParamWidget::create<LEDButton>(Vec(portX[i] + 52, row3Y + 20), module, PhraseTrigger::ARM_PHRASE + count,0.0, 1.0, 0.0));//select to trigger on phrase
+			addChild(ModuleLightWidget::create<MediumLight<BlueLight>>(Vec(portX[i]+56.0f,row3Y+24),module, PhraseTrigger::ARM_PHRASE_LIGHTS + count));
+			addOutput(Port::create<PJ301MPort>(Vec(portX[i] + 23, row3Y + 52), Port::OUTPUT, module, PhraseTrigger::TRIGGER_OUTPUT + count));
+			count++;
+		}
 	}
 };
 
