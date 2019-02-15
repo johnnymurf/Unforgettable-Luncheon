@@ -302,7 +302,7 @@
      transform="translate(0,-196.45832)">
     <path
        style="opacity:1;vector-effect:none;fill:#000000;fill-opacity:1;fill-rule:evenodd;stroke:#000000;stroke-width:0.97310597;stroke-linecap:butt;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;paint-order:normal"
-       d="M -0.18898842,196.45832 H 95.250004 V 297 H -0.18898842 Z"
+       d="M -0.18898884,196.45832 H 95.250004 V 297 H -0.18898884 Z"
        id="rect817"
        inkscape:connector-curvature="0" />
     <text
@@ -316,6 +316,13 @@
          x="7.7485113"
          y="213.38161"
          style="stroke-width:0.26458332" /></text>
+    <rect
+       style="opacity:1;fill:#502d16;fill-opacity:1;stroke:#000000;stroke-width:0.13710153;stroke-opacity:1"
+       id="rect6432"
+       width="54.529785"
+       height="7.7320013"
+       x="22.061001"
+       y="200.30521" />
   </g>
   <g
      inkscape:groupmode="layer"

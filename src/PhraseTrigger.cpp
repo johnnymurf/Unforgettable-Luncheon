@@ -6,6 +6,7 @@
 //test
 #include "UL.hpp"
 #include "dsp/digital.hpp"
+#include "cmath"
 
 
 
@@ -47,13 +48,13 @@ struct PhraseTrigger : Module {
 	int beatCount = 1;
 	int beatDisplay = 0;
 	int barCount = 1; 
-	int barDisplay = 0; 
+	int barDisplay = 1; 
 	int phraseCount = 1;
-	int phraseDisplay = 0;
+	int phraseDisplay = 1;
 	int beatsPerBar = 4;
 	int barsPerPhrase = 8;
 	float deltaTime = 0;
-	int totalBeats = 1;
+	int totalBeats = 0;
 
 	struct armModule{
 		SchmittTrigger armButtonTrigger;
@@ -103,14 +104,16 @@ void PhraseTrigger::step() {
 		isBeat = clockTrigger.process(inputs[CLOCK_INPUT].value);
 		
 
+		// TODO - user selects if module will trigger on start of bar or start of phrase
 		for(int i = 0; i < NUM_ARM_MODULUES; i++){
-			
-			// trigger if set to phrase
+			// if((beatCount == 1 && isBeat) && armModules[i].isArmed ){
+			// 	armModules[i].pulseOut.trigger(1e-3); //pulseOut will be true for 1mss
+			// 	armModules[i].isArmed = false; // pulse sent from armed module, no need to keep armed or will retrigger
+			// }
 			if((barCount == 1 && beatCount == 1) &&  isBeat && armModules[i].hasChosenPhrase && armModules[i].isArmed){
 			 	armModules[i].pulseOut.trigger(1e-3); //pulseOut will be true for 1mss
 			 	armModules[i].isArmed = false;
 			 }
-			//  trigger if set to bar
 			if( (beatCount == 1) && isBeat && armModules[i].hasChosenBar && armModules[i].isArmed){
 				armModules[i].pulseOut.trigger(1e-3); //pulseOut will be true for 1mss
 				armModules[i].isArmed = false;
@@ -121,19 +124,22 @@ void PhraseTrigger::step() {
 
 // 		TODO - User will determine beatsperBar and barsPerPhrase - default is 4 beats and 8 bars
 		if(isBeat){
-			printf("%d : %d : %d\n",phraseCount, barCount ,beatCount);
-			printf("Total Beats: %d\n", totalBeats);
+			barDisplay = barCount;
+			phraseDisplay = phraseCount;
+
 			beatCount++;
 			totalBeats++; 
 			beatDisplay = beatCount - 1; //prevents display from being off by one as it gets updated AFTER beat count incremement 
 			if (beatCount > beatsPerBar){
 				beatCount = 1;
 				barCount++;
+				
 			}
-				if (barCount > barsPerPhrase ){
+				if (barCount > barsPerPhrase){
 					barCount = 1;
 					phraseCount++;
 				}
+		
 		}
 
 		// outputs - will pulse if on the beat or show light if it is armed and if its set to output on bar or phrase
@@ -151,20 +157,22 @@ void PhraseTrigger::step() {
 struct BeatsDisplayWidget : TransparentWidget{
 
 	int *beat;
+	int *bar;
+	int *phrase;
 	std::shared_ptr<Font> font;
 
 	BeatsDisplayWidget(){
-		font = Font::load(assetPlugin(plugin,"res/DSEG7Classic-Bold.ttf"));
+		font = Font::load(assetPlugin(plugin,"res/DSEG14Classic-Italic.ttf"));
 	}
 	void draw(NVGcontext *vg) override{
-		nvgFontSize(vg, 30);
+		nvgFontSize(vg, 20);
 		nvgFontFaceId(vg, font->handle);
-		nvgTextLetterSpacing(vg, -2);
-	
+		nvgTextLetterSpacing(vg, 2);
+		Vec textPos = Vec(100,40);
 		nvgFillColor(vg, nvgRGBA(0xff, 0x18, 0x00, 0xff));
-		char text[100];
-		snprintf(text, sizeof(text), " %u",((unsigned) *beat));
-		nvgText(vg, 30, 320, text, NULL);
+		char text[250];
+		snprintf(text, sizeof(text), "%02u  :  %02u  :  %02u",((unsigned) *phrase),((unsigned) *bar),((unsigned) *beat));
+		nvgText(vg, textPos.x, textPos.y, text, NULL);
 	}
 };
 
@@ -186,7 +194,8 @@ struct PhraseTriggerWidget : ModuleWidget {
 		{
 			BeatsDisplayWidget *beatDisplay = new BeatsDisplayWidget();
 				beatDisplay->beat = (&module->beatDisplay);
-				
+				beatDisplay->bar = &module->barDisplay;
+				beatDisplay->phrase = &module->phraseDisplay;
 				addChild(beatDisplay);
 				}
 
