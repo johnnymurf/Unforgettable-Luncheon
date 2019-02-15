@@ -85,7 +85,7 @@ armModule armModules[NUM_ARM_MODULUES];
 void PhraseTrigger::step() {
 		deltaTime = engineGetSampleTime();
 
-		//Check if user has armed button or sent armed input externally
+		//Check if user has armed button or sent armed input externally, and chosen bar or phrase
 		for(int i = 0; i < NUM_ARM_MODULUES; i++){
 			armModules[i].armButton = armModules[i].armButtonTrigger.process(params[ARM_PARAM+i].value);
 			armModules[i].armInput = armModules[i].armInputTrigger.process(inputs[ARM_INPUT+i].value);
@@ -104,9 +104,8 @@ void PhraseTrigger::step() {
 		for(int i = 0; i < NUM_ARM_MODULUES; i++){
 			if((armModules[i].armButton || armModules[i].armInput) && !armModules[i].isArmed){
 		 		armModules[i].isArmed = true;
-
+		 	}
 		}
-		
 		//True if input to clock is high (receiving input from clock source) 			
 		isBeat = clockTrigger.process(inputs[CLOCK_INPUT].value);
 
@@ -120,26 +119,22 @@ void PhraseTrigger::step() {
 			for(int i = 0; i < NUM_ARM_MODULUES; i++){
 				armModules[i].openTrigger = false;
 			}
-
 		}
+
 		
 		for(int i = 0; i < NUM_ARM_MODULUES; i++){
 			if((barCount == 1 && beatCount == 1) &&  isBeat && armModules[i].hasChosenPhrase && armModules[i].isArmed){
 				armModules[i].openTrigger = !armModules[i].openTrigger;
-				printf("Testing: %d\n",armModules[i].openTrigger);
-			// 	armModules[i].pulseOut.trigger(1e-3); //pulseOut will be true for 1mss
 			 	armModules[i].isArmed = false;
 			 }
 			if( (beatCount == 1) && isBeat && armModules[i].hasChosenBar && armModules[i].isArmed){
 				armModules[i].openTrigger = !armModules[i].openTrigger;
-				printf("Testing: %d\n",armModules[i].openTrigger);
-			//	armModules[i].pulseOut.trigger(1e-3); //pulseOut will be true for 1mss
 				armModules[i].isArmed = false;
 			}
 
 		}
 		
-
+		//Incremement beat counters;
 		if(isBeat && !resetButton.process(params[RESET_PARAM].value) ){
 			barDisplay = barCount;
 			phraseDisplay = phraseCount;
@@ -156,14 +151,10 @@ void PhraseTrigger::step() {
 					phraseCount++;
 				}
 		}
-		
-		
 
 		// outputs - will pulse if on the beat or show light if it is armed and if its set to output on bar or phrase
 		for(int i = 0; i < NUM_ARM_MODULUES; i++){
 			if(armModules[i].openTrigger){
-			//	armModules[i].pulseOut.trigger(1e-2);
-		//	printf("clockpulse\n");
 				if(armModules[i].clockTrigger.process(inputs[CLOCK_INPUTS+ i].value)){
 					outputs[TRIGGER_OUTPUT+i].value = 10.0f;
 				}
@@ -172,8 +163,6 @@ void PhraseTrigger::step() {
 				}
 
 			}
-					 	}
-
 			
 			lights[ARM_LIGHT + i].value = armModules[i].isArmed;
 			lights[ARM_BAR_LIGHTS + i].value = armModules[i].hasChosenBar;
