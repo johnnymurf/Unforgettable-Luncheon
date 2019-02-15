@@ -10,7 +10,7 @@
 
 
 
-const int NUM_ARM_MODULUES = 12;
+const int NUM_ARM_MODULUES = 9;
 const int NUM_ROWS = 3;
 struct PhraseTrigger : Module {
 	enum ParamIds {
@@ -25,6 +25,7 @@ struct PhraseTrigger : Module {
 		CLOCK_INPUT,
 		RESET_INPUT,
 		ENUMS(ARM_INPUT,NUM_ARM_MODULUES),
+		ENUMS(CLOCK_INPUTS,NUM_ARM_MODULUES),
 		NUM_INPUTS
 	};
 	enum OutputIds {
@@ -64,6 +65,7 @@ struct PhraseTrigger : Module {
 	struct armModule{
 		SchmittTrigger armButtonTrigger;
 		SchmittTrigger armInputTrigger;
+		SchmittTrigger clockTrigger;
 		SchmittTrigger armBar;
 		SchmittTrigger armPhrase;
 		PulseGenerator pulseOut;
@@ -73,6 +75,7 @@ struct PhraseTrigger : Module {
 		bool armInput = false;
 		bool hasChosenBar = true; //default will be trigger on bar  
 		bool hasChosenPhrase = false;
+		bool openTrigger = false;
 	};
 
 
@@ -101,8 +104,9 @@ void PhraseTrigger::step() {
 		for(int i = 0; i < NUM_ARM_MODULUES; i++){
 			if((armModules[i].armButton || armModules[i].armInput) && !armModules[i].isArmed){
 		 		armModules[i].isArmed = true;
-		 	}
+
 		}
+		
 		//True if input to clock is high (receiving input from clock source) 			
 		isBeat = clockTrigger.process(inputs[CLOCK_INPUT].value);
 
@@ -113,15 +117,23 @@ void PhraseTrigger::step() {
 			beatDisplay = beatCount - 1;
 			barDisplay = barCount;
 			phraseDisplay = phraseCount;
+			for(int i = 0; i < NUM_ARM_MODULUES; i++){
+				armModules[i].openTrigger = false;
+			}
+
 		}
 		
 		for(int i = 0; i < NUM_ARM_MODULUES; i++){
 			if((barCount == 1 && beatCount == 1) &&  isBeat && armModules[i].hasChosenPhrase && armModules[i].isArmed){
-			 	armModules[i].pulseOut.trigger(1e-3); //pulseOut will be true for 1mss
+				armModules[i].openTrigger = !armModules[i].openTrigger;
+				printf("Testing: %d\n",armModules[i].openTrigger);
+			// 	armModules[i].pulseOut.trigger(1e-3); //pulseOut will be true for 1mss
 			 	armModules[i].isArmed = false;
 			 }
 			if( (beatCount == 1) && isBeat && armModules[i].hasChosenBar && armModules[i].isArmed){
-				armModules[i].pulseOut.trigger(1e-3); //pulseOut will be true for 1mss
+				armModules[i].openTrigger = !armModules[i].openTrigger;
+				printf("Testing: %d\n",armModules[i].openTrigger);
+			//	armModules[i].pulseOut.trigger(1e-3); //pulseOut will be true for 1mss
 				armModules[i].isArmed = false;
 			}
 
@@ -145,10 +157,24 @@ void PhraseTrigger::step() {
 				}
 		}
 		
+		
 
 		// outputs - will pulse if on the beat or show light if it is armed and if its set to output on bar or phrase
 		for(int i = 0; i < NUM_ARM_MODULUES; i++){
-			outputs[TRIGGER_OUTPUT+i].value = armModules[i].pulseOut.process(deltaTime) ? 10.f : 0.f;
+			if(armModules[i].openTrigger){
+			//	armModules[i].pulseOut.trigger(1e-2);
+		//	printf("clockpulse\n");
+				if(armModules[i].clockTrigger.process(inputs[CLOCK_INPUTS+ i].value)){
+					outputs[TRIGGER_OUTPUT+i].value = 10.0f;
+				}
+				else{
+					outputs[TRIGGER_OUTPUT+i].value = 0.0f;
+				}
+
+			}
+					 	}
+
+			
 			lights[ARM_LIGHT + i].value = armModules[i].isArmed;
 			lights[ARM_BAR_LIGHTS + i].value = armModules[i].hasChosenBar;
 			lights[ARM_PHRASE_LIGHTS + i].value = armModules[i].hasChosenPhrase;
@@ -208,7 +234,7 @@ struct PhraseTriggerWidget : ModuleWidget {
 		}
 
 		//For LED buttons, child Light must be x+4, y+4 to be centered
-		static const  float portX[4] = {10, 100, 190, 280};
+		static const  float portX[4] = {20, 140, 260};
 		int count = 0;
 		static const float row1Y = 100;
 		for(int i = 0; i < NUM_ARM_MODULUES/NUM_ROWS; i++){
@@ -218,10 +244,12 @@ struct PhraseTriggerWidget : ModuleWidget {
 			//top button
 			addParam(ParamWidget::create<LEDButton>(Vec(portX[i]+26,row1Y), module, PhraseTrigger::ARM_PARAM + i, 0.0, 1.0, 0.0));//arm button
 			addChild(ModuleLightWidget::create<MediumLight<RedLight>>(Vec(portX[i]+30.0f, row1Y + 4.0f), module, PhraseTrigger::ARM_LIGHT + i));//arm button light
+			
 			addInput(Port::create<PJ301MPort>(Vec((portX[i] + 23), row1Y + 24), Port::INPUT, module, PhraseTrigger::ARM_INPUT + i));// takes input to arm module (useful for MIDI)
 			//right button
 			addParam(ParamWidget::create<LEDButton>(Vec(portX[i] + 52, row1Y + 20), module, PhraseTrigger::ARM_PHRASE + i,0.0, 1.0, 0.0));//select to trigger on phrase
 			addChild(ModuleLightWidget::create<MediumLight<BlueLight>>(Vec(portX[i]+56.0f,row1Y+24),module, PhraseTrigger::ARM_PHRASE_LIGHTS + i));
+			addInput(Port::create<PJ301MPort>(Vec(portX[i] - 2, row1Y + 52), Port::INPUT, module, PhraseTrigger::CLOCK_INPUTS + i));
 			addOutput(Port::create<PJ301MPort>(Vec(portX[i] + 23, row1Y + 52), Port::OUTPUT, module, PhraseTrigger::TRIGGER_OUTPUT + i));
 			count++;
 		}
@@ -237,6 +265,7 @@ struct PhraseTriggerWidget : ModuleWidget {
 			//right button
 			addParam(ParamWidget::create<LEDButton>(Vec(portX[i] + 52, row2Y + 20), module, PhraseTrigger::ARM_PHRASE + count,0.0, 1.0, 0.0));//select to trigger on phrase
 			addChild(ModuleLightWidget::create<MediumLight<BlueLight>>(Vec(portX[i]+56.0f,row2Y+24),module, PhraseTrigger::ARM_PHRASE_LIGHTS + count));
+			addInput(Port::create<PJ301MPort>(Vec(portX[i] - 2, row2Y + 52), Port::INPUT, module, PhraseTrigger::CLOCK_INPUTS + count));
 			addOutput(Port::create<PJ301MPort>(Vec(portX[i] + 23, row2Y + 52), Port::OUTPUT, module, PhraseTrigger::TRIGGER_OUTPUT + count));
 			count++;
 		}
@@ -252,6 +281,7 @@ struct PhraseTriggerWidget : ModuleWidget {
 			//right button
 			addParam(ParamWidget::create<LEDButton>(Vec(portX[i] + 52, row3Y + 20), module, PhraseTrigger::ARM_PHRASE + count,0.0, 1.0, 0.0));//select to trigger on phrase
 			addChild(ModuleLightWidget::create<MediumLight<BlueLight>>(Vec(portX[i]+56.0f,row3Y+24),module, PhraseTrigger::ARM_PHRASE_LIGHTS + count));
+			addInput(Port::create<PJ301MPort>(Vec(portX[i] - 2, row3Y + 52), Port::INPUT, module, PhraseTrigger::CLOCK_INPUTS + count));
 			addOutput(Port::create<PJ301MPort>(Vec(portX[i] + 23, row3Y + 52), Port::OUTPUT, module, PhraseTrigger::TRIGGER_OUTPUT + count));
 			count++;
 		}
