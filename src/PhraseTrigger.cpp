@@ -97,13 +97,27 @@ void PhraseTrigger::step() {
 				armModules[i].hasChosenBar = false;
 				armModules[i].hasChosenPhrase = true;
 			}
+			if(armModules[i].armButton || armModules[i].armInput){
+				printf("Test\n");
+			}
 	
 		}
+	
 
 		// On receiving arm input and not already armed, arm module.
 		for(int i = 0; i < NUM_ARM_MODULUES; i++){
 			if((armModules[i].armButton || armModules[i].armInput) && !armModules[i].isArmed){
 		 		armModules[i].isArmed = true;
+				armModules[i].armButton = 0.0f;
+				armModules[i].armInput = 0.0f;
+		 	}
+		}
+		//if armed, user turns off arming: 
+		for(int i = 0; i < NUM_ARM_MODULUES; i++){
+			if((armModules[i].armButton || armModules[i].armInput) && armModules[i].isArmed){
+		 		armModules[i].isArmed = false;
+				armModules[i].armButton = 0.0f;
+				armModules[i].armInput = 0.0f;
 		 	}
 		}
 		//True if input to clock is high (receiving input from clock source) 			
@@ -126,6 +140,7 @@ void PhraseTrigger::step() {
 			if((barCount == 1 && beatCount == 1) &&  isBeat && armModules[i].hasChosenPhrase && armModules[i].isArmed){
 				armModules[i].openTrigger = !armModules[i].openTrigger;
 			 	armModules[i].isArmed = false;
+				 
 			 }
 			if( (beatCount == 1) && isBeat && armModules[i].hasChosenBar && armModules[i].isArmed){
 				armModules[i].openTrigger = !armModules[i].openTrigger;
@@ -152,6 +167,7 @@ void PhraseTrigger::step() {
 				}
 		}
 
+
 		// outputs - will pulse if on the beat or show light if it is armed and if its set to output on bar or phrase
 		for(int i = 0; i < NUM_ARM_MODULUES; i++){
 			if(armModules[i].openTrigger){
@@ -163,6 +179,7 @@ void PhraseTrigger::step() {
 				}
 
 			}
+
 			
 			lights[ARM_LIGHT + i].value = armModules[i].isArmed;
 			lights[ARM_BAR_LIGHTS + i].value = armModules[i].hasChosenBar;
