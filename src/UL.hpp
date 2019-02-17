@@ -7,7 +7,5 @@ using namespace rack;
 extern Plugin *plugin;
 
 // Forward-declare each Model, defined in each module source file
-extern Model *modelPhraseTrigger;
+extern Model *modelSeeqwensah;
 
-static const int displayAlpha = 23;
-NVGcolor prepareDisplay(NVGcontext *vg, Rect *box, int fontSize);

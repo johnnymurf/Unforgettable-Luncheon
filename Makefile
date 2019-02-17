@@ -3,7 +3,7 @@ RACK_DIR ?= ../..
 
 # Must follow the format in the Naming section of
 # https://vcvrack.com/manual/PluginDevelopmentTutorial.html
-SLUG = Unforgettable_Luncheon
+SLUG = UnforgettableLuncheon
 
 # Must follow the format in the Versioning section of
 # https://vcvrack.com/manual/PluginDevelopmentTutorial.html
