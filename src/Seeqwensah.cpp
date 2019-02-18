@@ -17,18 +17,18 @@ struct Seeqwensah : Module {
 		ENUMS(ARM_PARAM, NUM_COMPONENTS),
 		ENUMS(ARM_BAR, NUM_COMPONENTS),
 		ENUMS(ARM_PHRASE, NUM_COMPONENTS),
-//TO DO		RESET_PARAM,
 		NUM_PARAMS
 	 };
 	enum InputIds {
 		MASTER_CLOCK,
 		RESET_INPUT,
 		ENUMS(ARM_INPUT, NUM_COMPONENTS),
-		ENUMS(COMPONENT_CLOCKS, NUM_COMPONENTS),
+		ENUMS(CLOCKS_IN, NUM_COMPONENTS),
 		NUM_INPUTS
 	};
 	enum OutputIds {
-		ENUMS(TRIGGER_OUTPUT, NUM_COMPONENTS),
+		ENUMS(CLOCKS_OUT, NUM_COMPONENTS),
+		ENUMS(RESETS_OUT, NUM_COMPONENTS),
 		NUM_OUTPUTS
 	};
 	enum LightIds {
@@ -67,7 +67,9 @@ struct Seeqwensah : Module {
 		SchmittTrigger clockTrigger;
 		SchmittTrigger armBar;
 		SchmittTrigger armPhrase;
+		SchmittTrigger resetOutOnOff;
 		PulseGenerator pulseOut;
+		PulseGenerator resetPulseOut;
  
 		bool isArmed = false;
 		bool armButton = false;
@@ -75,6 +77,7 @@ struct Seeqwensah : Module {
 		bool hasChosenBar = true; //default will be trigger on bar  
 		bool hasChosenPhrase = false;
 		bool openTrigger = false;
+		
 	};
 
 Component components [NUM_COMPONENTS];
@@ -103,7 +106,9 @@ void disarmModule(int i){
 
 void outputTriggerEngage(int i){				
 	components[i].openTrigger = !components[i].openTrigger;
-	components[i].isArmed = false;	 
+	components[i].isArmed = false;
+	//Send pulse to reset Out;
+	components[i].resetPulseOut.trigger(1e-3f);
 }
 
 void resetModule(){
@@ -138,18 +143,17 @@ void incrementBeat(){
 };
 
 void Seeqwensah::step() {
-		//deltaTime = engineGetSampleTime();
+		deltaTime = engineGetSampleTime();
 		//True if input to clock is high (receiving input from clock source) 			
 		isBeat = clockTrigger.process(inputs[MASTER_CLOCK].value);
-
-
 		
 		// Loop through all components 
 		for(int i = 0; i < NUM_COMPONENTS; i++){
 			// check if user has armed a component 
 			components[i].armButton = components[i].armButtonTrigger.process(params[ARM_PARAM+i].value);
 			components[i].armInput = components[i].armInputTrigger.process(inputs[ARM_INPUT+i].value);
-
+			
+			
 			// User selects to output on bar or phrase
 			if(components[i].armBar.process(params[ARM_BAR+i].value)){
 				setBar(i);
@@ -177,13 +181,23 @@ void Seeqwensah::step() {
 			
 
 			if(components[i].openTrigger){
-				if(components[i].clockTrigger.process(inputs[COMPONENT_CLOCKS+ i].value)){
-					outputs[TRIGGER_OUTPUT+i].value = 10.0f;
+				if(components[i].clockTrigger.process(inputs[CLOCKS_IN+ i].value)){
+					outputs[CLOCKS_OUT+i].value = 10.0f;
 				}
 				else{
-					outputs[TRIGGER_OUTPUT+i].value = 0.0f;
+					outputs[CLOCKS_OUT+i].value = 0.0f;
 				}
+
 			}
+
+
+			if(components[i].resetPulseOut.process(deltaTime)){
+				outputs[RESETS_OUT+i].value = 10.0f;
+			}
+			if(!components[i].resetPulseOut.process(deltaTime)){
+				outputs[RESETS_OUT+i].value = 0.0f;
+			}
+			
 		    // outputs - will pulse if on the beat or show light if it is armed and if its set to output on bar or phrase
 			lights[ARM_LIGHT + i].value = components[i].isArmed;
 			lights[ARM_BAR_LIGHTS + i].value = components[i].hasChosenBar;
@@ -272,8 +286,10 @@ struct SeeqwensahWidget : ModuleWidget {
 			//right button
 			addParam(ParamWidget::create<LEDButton>(Vec(portX[i] + 52, row1Y + 20), module, Seeqwensah::ARM_PHRASE + i,0.0, 1.0, 0.0));//select to trigger on phrase
 			addChild(ModuleLightWidget::create<MediumLight<BlueLight>>(Vec(portX[i]+56.0f,row1Y+24),module, Seeqwensah::ARM_PHRASE_LIGHTS + i));
-			addInput(Port::create<PJ301MPort>(Vec(portX[i] - 2, row1Y + 52), Port::INPUT, module, Seeqwensah::COMPONENT_CLOCKS + i));
-			addOutput(Port::create<PJ301MPort>(Vec(portX[i] + 23, row1Y + 52), Port::OUTPUT, module, Seeqwensah::TRIGGER_OUTPUT + i));
+			addInput(Port::create<PJ301MPort>(Vec(portX[i] - 2, row1Y + 52), Port::INPUT, module, Seeqwensah::CLOCKS_IN + i));
+			addOutput(Port::create<PJ301MPort>(Vec(portX[i] + 23, row1Y + 52), Port::OUTPUT, module, Seeqwensah::CLOCKS_OUT + i));
+			addOutput(Port::create<PJ301MPort>(Vec(portX[i] + 43, row1Y + 52), Port::OUTPUT, module, Seeqwensah::RESETS_OUT + i));
+			
 			count++;
 		}
 		static const float row2Y = 190;
@@ -288,8 +304,8 @@ struct SeeqwensahWidget : ModuleWidget {
 			//right button
 			addParam(ParamWidget::create<LEDButton>(Vec(portX[i] + 52, row2Y + 20), module, Seeqwensah::ARM_PHRASE + count,0.0, 1.0, 0.0));//select to trigger on phrase
 			addChild(ModuleLightWidget::create<MediumLight<BlueLight>>(Vec(portX[i]+56.0f,row2Y+24),module, Seeqwensah::ARM_PHRASE_LIGHTS + count));
-			addInput(Port::create<PJ301MPort>(Vec(portX[i] - 2, row2Y + 52), Port::INPUT, module, Seeqwensah::COMPONENT_CLOCKS + count));
-			addOutput(Port::create<PJ301MPort>(Vec(portX[i] + 23, row2Y + 52), Port::OUTPUT, module, Seeqwensah::TRIGGER_OUTPUT + count));
+			addInput(Port::create<PJ301MPort>(Vec(portX[i] - 2, row2Y + 52), Port::INPUT, module, Seeqwensah::CLOCKS_IN + count));
+			addOutput(Port::create<PJ301MPort>(Vec(portX[i] + 23, row2Y + 52), Port::OUTPUT, module, Seeqwensah::CLOCKS_OUT + count));
 			count++;
 		}
 		static const float row3Y = 280;
@@ -304,8 +320,8 @@ struct SeeqwensahWidget : ModuleWidget {
 			//right button
 			addParam(ParamWidget::create<LEDButton>(Vec(portX[i] + 52, row3Y + 20), module, Seeqwensah::ARM_PHRASE + count,0.0, 1.0, 0.0));//select to trigger on phrase
 			addChild(ModuleLightWidget::create<MediumLight<BlueLight>>(Vec(portX[i]+56.0f,row3Y+24),module, Seeqwensah::ARM_PHRASE_LIGHTS + count));
-			addInput(Port::create<PJ301MPort>(Vec(portX[i] - 2, row3Y + 52), Port::INPUT, module, Seeqwensah::COMPONENT_CLOCKS + count));
-			addOutput(Port::create<PJ301MPort>(Vec(portX[i] + 23, row3Y + 52), Port::OUTPUT, module, Seeqwensah::TRIGGER_OUTPUT + count));
+			addInput(Port::create<PJ301MPort>(Vec(portX[i] - 2, row3Y + 52), Port::INPUT, module, Seeqwensah::CLOCKS_IN + count));
+			addOutput(Port::create<PJ301MPort>(Vec(portX[i] + 23, row3Y + 52), Port::OUTPUT, module, Seeqwensah::CLOCKS_OUT + count));
 			count++;
 		}
 	}
