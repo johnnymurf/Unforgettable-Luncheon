@@ -22,10 +22,10 @@ struct Seeqwensah : Module {
 		NUM_PARAMS
 	 };
 	enum InputIds {
-		CLOCK_INPUT,
+		MASTER_CLOCK,
 		RESET_INPUT,
 		ENUMS(ARM_INPUT, NUM_COMPONENTS),
-		ENUMS(CLOCK_INPUTS, NUM_COMPONENTS),
+		ENUMS(COMPONENT_CLOCKS, NUM_COMPONENTS),
 		NUM_INPUTS
 	};
 	enum OutputIds {
@@ -80,108 +80,131 @@ struct Seeqwensah : Module {
 
 Component components [NUM_COMPONENTS];
 
-//Check if user has armed button or sent armed input externally, and chosen bar or phrase
-void setBarOrPhrase(int i){
-	if(components[i].armBar.process(params[ARM_BAR+i].value)){
-		components[i].hasChosenBar = true;
-		components[i].hasChosenPhrase = false;
-	}
-	if(components[i].armPhrase.process(params[ARM_PHRASE+i].value)){
-		components[i].hasChosenBar = false;
-		components[i].hasChosenPhrase = true;
-	}
+void setBar(int i){
+	components[i].hasChosenBar = true;
+	components[i].hasChosenPhrase = false;
 }
+
+void setPhrase(int i){
+	components[i].hasChosenBar = false;
+	components[i].hasChosenPhrase = true;
+}
+
 void armModule(int i){
-	if((components[i].armButton || components[i].armInput) && !components[i].isArmed){
 	components[i].isArmed = true;
 	components[i].armButton = 0.0f;
 	components[i].armInput = 0.0f;
-	}
 }
+
 void disarmModule(int i){
-	if((components[i].armButton || components[i].armInput) && components[i].isArmed){
 	components[i].isArmed = false;
 	components[i].armButton = 0.0f;
 	components[i].armInput = 0.0f;
 }
 
+void outputTriggerEngage(int i){				
+	components[i].openTrigger = !components[i].openTrigger;
+	components[i].isArmed = false;	 
 }
+
+void resetModule(){
+	beatCount = 1; 
+	barCount = 1;
+	phraseCount = 1;
+	beatDisplay = beatCount - 1;
+	barDisplay = barCount;
+	phraseDisplay = phraseCount;
+	for(int i = 0; i < NUM_COMPONENTS; i++){
+		components[i].openTrigger = false;
+		components[i].isArmed = false;
+	}
+}
+
+void incrementBeat(){
+	barDisplay = barCount;
+	phraseDisplay = phraseCount;
+	beatCount++;
+	totalBeats++; 
+	beatDisplay = beatCount - 1; //prevents display from being off by one as it gets updated AFTER beat count incremement 
+	if (beatCount > beatsPerBar){
+		beatCount = 1;
+		barCount++;
+	}
+		if (barCount > barsPerPhrase){
+			barCount = 1;
+			phraseCount++;
+		}
+}
+
+
+
+
+
+
+
+
+
+
+
 };
 
 void Seeqwensah::step() {
 		deltaTime = engineGetSampleTime();
-
+		//True if input to clock is high (receiving input from clock source) 			
+		isBeat = clockTrigger.process(inputs[MASTER_CLOCK].value);
 		
 		for(int i = 0; i < NUM_COMPONENTS; i++){
+			// check if user has armed a component 
 			components[i].armButton = components[i].armButtonTrigger.process(params[ARM_PARAM+i].value);
 			components[i].armInput = components[i].armInputTrigger.process(inputs[ARM_INPUT+i].value);
-			setBarOrPhrase(i);
-			armModule(i);
-			disarmModule(i);
-			}
-		
-		//True if input to clock is high (receiving input from clock source) 			
-		isBeat = clockTrigger.process(inputs[CLOCK_INPUT].value);
 
-		if( resetTrigger.process(inputs[RESET_INPUT].value)  || resetButton.process(params[RESET_PARAM].value) ){
-			beatCount = 1; 
-			barCount = 1;
-			phraseCount = 1;
-			beatDisplay = beatCount - 1;
-			barDisplay = barCount;
-			phraseDisplay = phraseCount;
-			for(int i = 0; i < NUM_COMPONENTS; i++){
-				components[i].openTrigger = false;
-				components[i].isArmed = false;
+			// User selects to output on bar or phrase
+			if(components[i].armBar.process(params[ARM_BAR+i].value)){
+				setBar(i);
 			}
-		}
+			if(components[i].armPhrase.process(params[ARM_PHRASE+i].value)){
+				setPhrase(i);
+			}
 
-		
-		for(int i = 0; i < NUM_COMPONENTS; i++){
+			// Arm or Disarm the component 
+			if((components[i].armButton || components[i].armInput) && !components[i].isArmed){
+				armModule(i);
+			}
+			if((components[i].armButton || components[i].armInput) && components[i].isArmed){
+				disarmModule(i);
+			}
+
+			// if armed and user selected Phrase
 			if((barCount == 1 && beatCount == 1) &&  isBeat && components[i].hasChosenPhrase && components[i].isArmed){
-				components[i].openTrigger = !components[i].openTrigger;
-			 	components[i].isArmed = false;	 
+				outputTriggerEngage(i);
 			 }
-			if( (beatCount == 1) && isBeat && components[i].hasChosenBar && components[i].isArmed){
-				components[i].openTrigger = !components[i].openTrigger;
-				components[i].isArmed = false;
+			//  if armed and user selected Bar
+			if((beatCount == 1) && isBeat && components[i].hasChosenBar && components[i].isArmed){
+				outputTriggerEngage(i);
 			}
-		}
-		
-		//Incremement beat counters;
-		if(isBeat && !resetButton.process(params[RESET_PARAM].value) ){
-			barDisplay = barCount;
-			phraseDisplay = phraseCount;
-			beatCount++;
-			totalBeats++; 
-			beatDisplay = beatCount - 1; //prevents display from being off by one as it gets updated AFTER beat count incremement 
-			if (beatCount > beatsPerBar){
-				beatCount = 1;
-				barCount++;
-			}
-				if (barCount > barsPerPhrase){
-					barCount = 1;
-					phraseCount++;
-				}
-		}
+			
 
-
-		// outputs - will pulse if on the beat or show light if it is armed and if its set to output on bar or phrase
-		for(int i = 0; i < NUM_COMPONENTS; i++){
 			if(components[i].openTrigger){
-				if(components[i].clockTrigger.process(inputs[CLOCK_INPUTS+ i].value)){
+				if(components[i].clockTrigger.process(inputs[COMPONENT_CLOCKS+ i].value)){
 					outputs[TRIGGER_OUTPUT+i].value = 10.0f;
 				}
 				else{
 					outputs[TRIGGER_OUTPUT+i].value = 0.0f;
 				}
-
 			}
-
-			
+		    // outputs - will pulse if on the beat or show light if it is armed and if its set to output on bar or phrase
 			lights[ARM_LIGHT + i].value = components[i].isArmed;
 			lights[ARM_BAR_LIGHTS + i].value = components[i].hasChosenBar;
 			lights[ARM_PHRASE_LIGHTS + i].value = components[i].hasChosenPhrase;
+		}
+		
+
+		if( resetTrigger.process(inputs[RESET_INPUT].value)  || resetButton.process(params[RESET_PARAM].value) ){
+			resetModule();
+		}
+		//Incremement beat counters;
+		if(isBeat && !resetButton.process(params[RESET_PARAM].value) ){
+			incrementBeat();
 		}
 		lights[RESET_LIGHT].setBrightnessSmooth(resetTrigger.isHigh());
 		lights[RESET_LIGHT].setBrightnessSmooth(resetButton.isHigh());
@@ -222,7 +245,7 @@ struct SeeqwensahWidget : ModuleWidget {
 		addChild(Widget::create<ScrewSilver>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
 
 		//Used for CLock input 
-		addInput(Port::create<PJ301MPort>(Vec(33, 20), Port::INPUT, module, Seeqwensah::CLOCK_INPUT));
+		addInput(Port::create<PJ301MPort>(Vec(33, 20), Port::INPUT, module, Seeqwensah::MASTER_CLOCK));
 		addInput(Port::create<PJ301MPort>(Vec(33, 50), Port::INPUT, module, Seeqwensah::RESET_INPUT));
 		addParam(ParamWidget::create<LEDButton>(Vec(10,53), module, Seeqwensah::RESET_PARAM, 0.0, 1.0, 0.0));//arm button
 		addChild(ModuleLightWidget::create<MediumLight<RedLight>>(Vec(14,57),module, Seeqwensah::RESET_LIGHT));
@@ -253,7 +276,7 @@ struct SeeqwensahWidget : ModuleWidget {
 			//right button
 			addParam(ParamWidget::create<LEDButton>(Vec(portX[i] + 52, row1Y + 20), module, Seeqwensah::ARM_PHRASE + i,0.0, 1.0, 0.0));//select to trigger on phrase
 			addChild(ModuleLightWidget::create<MediumLight<BlueLight>>(Vec(portX[i]+56.0f,row1Y+24),module, Seeqwensah::ARM_PHRASE_LIGHTS + i));
-			addInput(Port::create<PJ301MPort>(Vec(portX[i] - 2, row1Y + 52), Port::INPUT, module, Seeqwensah::CLOCK_INPUTS + i));
+			addInput(Port::create<PJ301MPort>(Vec(portX[i] - 2, row1Y + 52), Port::INPUT, module, Seeqwensah::COMPONENT_CLOCKS + i));
 			addOutput(Port::create<PJ301MPort>(Vec(portX[i] + 23, row1Y + 52), Port::OUTPUT, module, Seeqwensah::TRIGGER_OUTPUT + i));
 			count++;
 		}
@@ -269,7 +292,7 @@ struct SeeqwensahWidget : ModuleWidget {
 			//right button
 			addParam(ParamWidget::create<LEDButton>(Vec(portX[i] + 52, row2Y + 20), module, Seeqwensah::ARM_PHRASE + count,0.0, 1.0, 0.0));//select to trigger on phrase
 			addChild(ModuleLightWidget::create<MediumLight<BlueLight>>(Vec(portX[i]+56.0f,row2Y+24),module, Seeqwensah::ARM_PHRASE_LIGHTS + count));
-			addInput(Port::create<PJ301MPort>(Vec(portX[i] - 2, row2Y + 52), Port::INPUT, module, Seeqwensah::CLOCK_INPUTS + count));
+			addInput(Port::create<PJ301MPort>(Vec(portX[i] - 2, row2Y + 52), Port::INPUT, module, Seeqwensah::COMPONENT_CLOCKS + count));
 			addOutput(Port::create<PJ301MPort>(Vec(portX[i] + 23, row2Y + 52), Port::OUTPUT, module, Seeqwensah::TRIGGER_OUTPUT + count));
 			count++;
 		}
@@ -285,7 +308,7 @@ struct SeeqwensahWidget : ModuleWidget {
 			//right button
 			addParam(ParamWidget::create<LEDButton>(Vec(portX[i] + 52, row3Y + 20), module, Seeqwensah::ARM_PHRASE + count,0.0, 1.0, 0.0));//select to trigger on phrase
 			addChild(ModuleLightWidget::create<MediumLight<BlueLight>>(Vec(portX[i]+56.0f,row3Y+24),module, Seeqwensah::ARM_PHRASE_LIGHTS + count));
-			addInput(Port::create<PJ301MPort>(Vec(portX[i] - 2, row3Y + 52), Port::INPUT, module, Seeqwensah::CLOCK_INPUTS + count));
+			addInput(Port::create<PJ301MPort>(Vec(portX[i] - 2, row3Y + 52), Port::INPUT, module, Seeqwensah::COMPONENT_CLOCKS + count));
 			addOutput(Port::create<PJ301MPort>(Vec(portX[i] + 23, row3Y + 52), Port::OUTPUT, module, Seeqwensah::TRIGGER_OUTPUT + count));
 			count++;
 		}
