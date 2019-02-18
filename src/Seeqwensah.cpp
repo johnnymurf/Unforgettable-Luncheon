@@ -6,7 +6,6 @@
 //test
 #include "UL.hpp"
 #include "dsp/digital.hpp"
-#include "cmath"
 
 
 
@@ -136,23 +135,16 @@ void incrementBeat(){
 		}
 }
 
-
-
-
-
-
-
-
-
-
-
 };
 
 void Seeqwensah::step() {
-		deltaTime = engineGetSampleTime();
+		//deltaTime = engineGetSampleTime();
 		//True if input to clock is high (receiving input from clock source) 			
 		isBeat = clockTrigger.process(inputs[MASTER_CLOCK].value);
+
+
 		
+		// Loop through all components 
 		for(int i = 0; i < NUM_COMPONENTS; i++){
 			// check if user has armed a component 
 			components[i].armButton = components[i].armButtonTrigger.process(params[ARM_PARAM+i].value);
@@ -199,6 +191,8 @@ void Seeqwensah::step() {
 		}
 		
 
+
+
 		if( resetTrigger.process(inputs[RESET_INPUT].value)  || resetButton.process(params[RESET_PARAM].value) ){
 			resetModule();
 		}
@@ -206,6 +200,8 @@ void Seeqwensah::step() {
 		if(isBeat && !resetButton.process(params[RESET_PARAM].value) ){
 			incrementBeat();
 		}
+
+
 		lights[RESET_LIGHT].setBrightnessSmooth(resetTrigger.isHigh());
 		lights[RESET_LIGHT].setBrightnessSmooth(resetButton.isHigh());
 
@@ -237,7 +233,7 @@ struct TimeDisplayWidget : TransparentWidget{
 
 struct SeeqwensahWidget : ModuleWidget {
 	SeeqwensahWidget(Seeqwensah *module) : ModuleWidget(module) {
-		setPanel(SVG::load(assetPlugin(plugin, "res/Seeqwensah3.svg")));
+		setPanel(SVG::load(assetPlugin(plugin, "res/Seeqwensah.svg")));
 
 		addChild(Widget::create<ScrewSilver>(Vec(RACK_GRID_WIDTH, 0)));
 		addChild(Widget::create<ScrewSilver>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, 0)));
