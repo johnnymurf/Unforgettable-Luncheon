@@ -270,7 +270,7 @@ struct SeeqwensahWidget : ModuleWidget {
 			addChild(beatDisplay);
 		}
 
-		//For LED buttons, child Light must be x+4, y+4 to be centered
+		//Didn't use inner loops because that would require enums within enums and that could get messy
 		static const  float portX[4] = {20, 140, 260};
 		int count = 0;
 		static const float row1Y = 100;
@@ -288,7 +288,7 @@ struct SeeqwensahWidget : ModuleWidget {
 			addChild(ModuleLightWidget::create<MediumLight<BlueLight>>(Vec(portX[i]+56.0f,row1Y+24),module, Seeqwensah::ARM_PHRASE_LIGHTS + i));
 			addInput(Port::create<PJ301MPort>(Vec(portX[i] - 2, row1Y + 52), Port::INPUT, module, Seeqwensah::CLOCKS_IN + i));
 			addOutput(Port::create<PJ301MPort>(Vec(portX[i] + 23, row1Y + 52), Port::OUTPUT, module, Seeqwensah::CLOCKS_OUT + i));
-			addOutput(Port::create<PJ301MPort>(Vec(portX[i] + 43, row1Y + 52), Port::OUTPUT, module, Seeqwensah::RESETS_OUT + i));
+			addOutput(Port::create<PJ301MPort>(Vec(portX[i] + 47, row1Y + 52), Port::OUTPUT, module, Seeqwensah::RESETS_OUT + i));
 			
 			count++;
 		}
@@ -306,6 +306,7 @@ struct SeeqwensahWidget : ModuleWidget {
 			addChild(ModuleLightWidget::create<MediumLight<BlueLight>>(Vec(portX[i]+56.0f,row2Y+24),module, Seeqwensah::ARM_PHRASE_LIGHTS + count));
 			addInput(Port::create<PJ301MPort>(Vec(portX[i] - 2, row2Y + 52), Port::INPUT, module, Seeqwensah::CLOCKS_IN + count));
 			addOutput(Port::create<PJ301MPort>(Vec(portX[i] + 23, row2Y + 52), Port::OUTPUT, module, Seeqwensah::CLOCKS_OUT + count));
+			addOutput(Port::create<PJ301MPort>(Vec(portX[i] + 47, row2Y + 52), Port::OUTPUT, module, Seeqwensah::RESETS_OUT + count));
 			count++;
 		}
 		static const float row3Y = 280;
@@ -322,6 +323,7 @@ struct SeeqwensahWidget : ModuleWidget {
 			addChild(ModuleLightWidget::create<MediumLight<BlueLight>>(Vec(portX[i]+56.0f,row3Y+24),module, Seeqwensah::ARM_PHRASE_LIGHTS + count));
 			addInput(Port::create<PJ301MPort>(Vec(portX[i] - 2, row3Y + 52), Port::INPUT, module, Seeqwensah::CLOCKS_IN + count));
 			addOutput(Port::create<PJ301MPort>(Vec(portX[i] + 23, row3Y + 52), Port::OUTPUT, module, Seeqwensah::CLOCKS_OUT + count));
+			addOutput(Port::create<PJ301MPort>(Vec(portX[i] + 47, row3Y + 52), Port::OUTPUT, module, Seeqwensah::RESETS_OUT + count));
 			count++;
 		}
 	}
