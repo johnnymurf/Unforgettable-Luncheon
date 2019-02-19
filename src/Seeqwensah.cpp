@@ -286,8 +286,8 @@ struct SeeqwensahWidget : ModuleWidget {
 			addParam(ParamWidget::create<LEDButton>(Vec(portX[i],row1Y + 20), module, Seeqwensah::ARM_BAR + i,0.0, 1.0, 0.0));//select to trigger on bar
 			addChild(ModuleLightWidget::create<MediumLight<GreenLight>>(Vec(portX[i]+4.0f,row1Y+24),module, Seeqwensah::ARM_BAR_LIGHTS + i));
 			//top button
-			addParam(ParamWidget::create<LEDButton>(Vec(portX[i]+26,row1Y), module, Seeqwensah::ARM_PARAM + i, 0.0, 1.0, 0.0));//arm button
-			addChild(ModuleLightWidget::create<MediumLight<RedLight>>(Vec(portX[i]+30.0f, row1Y + 4.0f), module, Seeqwensah::ARM_LIGHT + i));//arm button light
+			addParam(ParamWidget::create<LEDBezel>(Vec(portX[i]+24,row1Y), module, Seeqwensah::ARM_PARAM + i, 0.0, 1.0, 0.0));//arm button
+			addChild(ModuleLightWidget::create<LEDBezelLight<RedLight>>(Vec(portX[i]+26.0f, row1Y + 2.0f), module, Seeqwensah::ARM_LIGHT + i));//arm button light
 			
 			addInput(Port::create<PJ301MPort>(Vec((portX[i] + 23), row1Y + 24), Port::INPUT, module, Seeqwensah::ARM_INPUT + i));// takes input to arm module (useful for MIDI)
 			//right button
@@ -305,8 +305,8 @@ struct SeeqwensahWidget : ModuleWidget {
 			addParam(ParamWidget::create<LEDButton>(Vec(portX[i],row2Y + 20), module, Seeqwensah::ARM_BAR + count,0.0, 1.0, 0.0));//select to trigger on bar
 			addChild(ModuleLightWidget::create<MediumLight<GreenLight>>(Vec(portX[i]+4.0f,row2Y+24),module, Seeqwensah::ARM_BAR_LIGHTS + count));
 			//top button
-			addParam(ParamWidget::create<LEDButton>(Vec(portX[i]+26,row2Y), module, Seeqwensah::ARM_PARAM + count, 0.0, 1.0, 0.0));//arm button
-			addChild(ModuleLightWidget::create<MediumLight<RedLight>>(Vec(portX[i]+30.0f, row2Y + 4.0f), module, Seeqwensah::ARM_LIGHT + count));//arm button light
+			addParam(ParamWidget::create<LEDBezel>(Vec(portX[i]+24,row2Y), module, Seeqwensah::ARM_PARAM + count, 0.0, 1.0, 0.0));//arm button
+			addChild(ModuleLightWidget::create<LEDBezelLight<RedLight>>(Vec(portX[i]+26.0f, row2Y + 2.0f), module, Seeqwensah::ARM_LIGHT + count));//arm button light
 			addInput(Port::create<PJ301MPort>(Vec((portX[i] + 23), row2Y + 24), Port::INPUT, module, Seeqwensah::ARM_INPUT + count));// takes input to arm module (useful for MIDI)
 			//right button
 			addParam(ParamWidget::create<LEDButton>(Vec(portX[i] + 52, row2Y + 20), module, Seeqwensah::ARM_PHRASE + count,0.0, 1.0, 0.0));//select to trigger on phrase
