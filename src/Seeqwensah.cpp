@@ -9,8 +9,8 @@
 
 
 
-const int NUM_COMPONENTS = 12;
-const int NUM_ROWS = 3;
+const int NUM_COMPONENTS = 8;
+const int NUM_ROWS = 2;
 const int MAX_PHRASE = 999;
 const int MAX_BAR = 99;
 const int MAX_BEAT = 99; 
@@ -142,6 +142,9 @@ void incrementBeat(){
 		if (barCount > barsPerPhrase){
 			barCount = 1;
 			phraseCount++;
+			if(phraseCount > MAX_PHRASE){
+				phraseCount = 1;
+			}
 		}
 }
 
@@ -240,7 +243,7 @@ struct TimeDisplayWidget : TransparentWidget{
 		nvgFontSize(vg, 20);
 		nvgFontFaceId(vg, font->handle);
 		nvgTextLetterSpacing(vg, 2);
-		Vec textPos = Vec(330,40);
+		Vec textPos = Vec(185,45);
 		nvgFillColor(vg, nvgRGBA(0xff, 0x18, 0x00, 0xff));
 		char text[250];
 		snprintf(text, sizeof(text), "%03u  :  %02u  :  %02u",((unsigned) *phrase),((unsigned) *bar),((unsigned) *beat));
@@ -277,7 +280,7 @@ struct SeeqwensahWidget : ModuleWidget {
 		//Didn't use inner loops rows/columns because that would require enums within enums and that could get messy
 		static const  float portX[4] = {55, 175, 295, 415};
 		int count = 0;
-		static const float row1Y = 100;
+		static const float row1Y = 120;
 		for(int i = 0; i < NUM_COMPONENTS/NUM_ROWS; i++){
 			// left button
 			addParam(ParamWidget::create<LEDButton>(Vec(portX[i],row1Y + 20), module, Seeqwensah::ARM_BAR + i,0.0, 1.0, 0.0));//select to trigger on bar
@@ -296,7 +299,7 @@ struct SeeqwensahWidget : ModuleWidget {
 			
 			count++;
 		}
-		static const float row2Y = 190;
+		static const float row2Y = 270;
 		for(int i = 0; i < NUM_COMPONENTS/NUM_ROWS; i++){
 			// left button
 			addParam(ParamWidget::create<LEDButton>(Vec(portX[i],row2Y + 20), module, Seeqwensah::ARM_BAR + count,0.0, 1.0, 0.0));//select to trigger on bar
@@ -313,23 +316,23 @@ struct SeeqwensahWidget : ModuleWidget {
 			addOutput(Port::create<PJ301MPort>(Vec(portX[i] + 47, row2Y + 52), Port::OUTPUT, module, Seeqwensah::RESETS_OUT + count));
 			count++;
 		}
-		static const float row3Y = 280;
-		for(int i = 0; i < NUM_COMPONENTS/NUM_ROWS; i++){
-			// left button
-			addParam(ParamWidget::create<LEDButton>(Vec(portX[i],row3Y + 20), module, Seeqwensah::ARM_BAR + count,0.0, 1.0, 0.0));//select to trigger on bar
-			addChild(ModuleLightWidget::create<MediumLight<GreenLight>>(Vec(portX[i]+4.0f,row3Y+24),module, Seeqwensah::ARM_BAR_LIGHTS + count));
-			//top button
-			addParam(ParamWidget::create<LEDButton>(Vec(portX[i]+26,row3Y), module, Seeqwensah::ARM_PARAM +count, 0.0, 1.0, 0.0));//arm button
-			addChild(ModuleLightWidget::create<MediumLight<RedLight>>(Vec(portX[i]+30.0f, row3Y + 4.0f), module, Seeqwensah::ARM_LIGHT + count));//arm button light
-			addInput(Port::create<PJ301MPort>(Vec((portX[i] + 23), row3Y + 24), Port::INPUT, module, Seeqwensah::ARM_INPUT + count));// takes input to arm module (useful for MIDI)
-			//right button
-			addParam(ParamWidget::create<LEDButton>(Vec(portX[i] + 52, row3Y + 20), module, Seeqwensah::ARM_PHRASE + count,0.0, 1.0, 0.0));//select to trigger on phrase
-			addChild(ModuleLightWidget::create<MediumLight<BlueLight>>(Vec(portX[i]+56.0f,row3Y+24),module, Seeqwensah::ARM_PHRASE_LIGHTS + count));
-			addInput(Port::create<PJ301MPort>(Vec(portX[i] - 2, row3Y + 52), Port::INPUT, module, Seeqwensah::CLOCKS_IN + count));
-			addOutput(Port::create<PJ301MPort>(Vec(portX[i] + 23, row3Y + 52), Port::OUTPUT, module, Seeqwensah::CLOCKS_OUT + count));
-			addOutput(Port::create<PJ301MPort>(Vec(portX[i] + 47, row3Y + 52), Port::OUTPUT, module, Seeqwensah::RESETS_OUT + count));
-			count++;
-		}
+	// 	static const float row3Y = 280;
+	// 	for(int i = 0; i < NUM_COMPONENTS/NUM_ROWS; i++){
+	// 		// left button
+	// 		addParam(ParamWidget::create<LEDButton>(Vec(portX[i],row3Y + 20), module, Seeqwensah::ARM_BAR + count,0.0, 1.0, 0.0));//select to trigger on bar
+	// 		addChild(ModuleLightWidget::create<MediumLight<GreenLight>>(Vec(portX[i]+4.0f,row3Y+24),module, Seeqwensah::ARM_BAR_LIGHTS + count));
+	// 		//top button
+	// 		addParam(ParamWidget::create<LEDButton>(Vec(portX[i]+26,row3Y), module, Seeqwensah::ARM_PARAM +count, 0.0, 1.0, 0.0));//arm button
+	// 		addChild(ModuleLightWidget::create<MediumLight<RedLight>>(Vec(portX[i]+30.0f, row3Y + 4.0f), module, Seeqwensah::ARM_LIGHT + count));//arm button light
+	// 		addInput(Port::create<PJ301MPort>(Vec((portX[i] + 23), row3Y + 24), Port::INPUT, module, Seeqwensah::ARM_INPUT + count));// takes input to arm module (useful for MIDI)
+	// 		//right button
+	// 		addParam(ParamWidget::create<LEDButton>(Vec(portX[i] + 52, row3Y + 20), module, Seeqwensah::ARM_PHRASE + count,0.0, 1.0, 0.0));//select to trigger on phrase
+	// 		addChild(ModuleLightWidget::create<MediumLight<BlueLight>>(Vec(portX[i]+56.0f,row3Y+24),module, Seeqwensah::ARM_PHRASE_LIGHTS + count));
+	// 		addInput(Port::create<PJ301MPort>(Vec(portX[i] - 2, row3Y + 52), Port::INPUT, module, Seeqwensah::CLOCKS_IN + count));
+	// 		addOutput(Port::create<PJ301MPort>(Vec(portX[i] + 23, row3Y + 52), Port::OUTPUT, module, Seeqwensah::CLOCKS_OUT + count));
+	// 		addOutput(Port::create<PJ301MPort>(Vec(portX[i] + 47, row3Y + 52), Port::OUTPUT, module, Seeqwensah::RESETS_OUT + count));
+	// 		count++;
+	// 	}
 	}
 };
 
