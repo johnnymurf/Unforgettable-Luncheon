@@ -6,6 +6,7 @@
 //test
 #include "UL.hpp"
 #include "dsp/digital.hpp"
+#include "rack.hpp"
 
 
 
@@ -14,7 +15,10 @@ const int NUM_ROWS = 2;
 const int MAX_PHRASE = 999;
 const int MAX_BAR = 99;
 const int MAX_BEAT = 99; 
+
 struct Seeqwensah : Module {
+
+
 	enum ParamIds {
 		RESET_PARAM,
 		ENUMS(ARM_PARAM, NUM_COMPONENTS),
@@ -250,6 +254,16 @@ struct TimeDisplayWidget : TransparentWidget{
 		nvgText(vg, textPos.x, textPos.y, text, NULL);
 	}
 };
+struct CustomLedDisplayTextField : TextField {
+	std::shared_ptr<Font> font;
+	Vec textOffset;
+	NVGcolor color;
+	CustomLedDisplayTextField(){
+        font = Font::load(assetPlugin(plugin, "res/DSEG14Classic-Italic.ttf"));
+        color = nvgRGB(0xf0, 0x00, 0x00);
+        textOffset = Vec(5, 0);  
+	}
+};
 
 
 
@@ -277,6 +291,14 @@ struct SeeqwensahWidget : ModuleWidget {
 			addChild(timeDisplay);
 		}
 
+		TextField* textField1;
+		    textField1 = Widget::create<CustomLedDisplayTextField>(Vec(6, 46));
+    textField1->box.size = Vec(78, 30);
+    textField1->multiline = false;
+addChild(textField1);
+		
+
+
 		//Didn't use inner loops rows/columns because that would require enums within enums and that could get messy
 		static const  float portX[4] = {55, 175, 295, 415};
 		int count = 0;
@@ -288,7 +310,6 @@ struct SeeqwensahWidget : ModuleWidget {
 			//top button
 			addParam(ParamWidget::create<LEDBezel>(Vec(portX[i]+24,row1Y), module, Seeqwensah::ARM_PARAM + i, 0.0, 1.0, 0.0));//arm button
 			addChild(ModuleLightWidget::create<LEDBezelLight<RedLight>>(Vec(portX[i]+26.0f, row1Y + 2.0f), module, Seeqwensah::ARM_LIGHT + i));//arm button light
-			
 			addInput(Port::create<PJ301MPort>(Vec((portX[i] + 23), row1Y + 24), Port::INPUT, module, Seeqwensah::ARM_INPUT + i));// takes input to arm module (useful for MIDI)
 			//right button
 			addParam(ParamWidget::create<LEDButton>(Vec(portX[i] + 52, row1Y + 20), module, Seeqwensah::ARM_PHRASE + i,0.0, 1.0, 0.0));//select to trigger on phrase
