@@ -1,6 +1,6 @@
 /*
 * Purpose of this module is to allow for timed triggers based on musical timings
-* Musical timings will be based on Phrase, Bar, Beat, and One-Shot
+* Musical timings will be based on Phrase, Bar, Beat.
 *
 */
 //test
@@ -9,8 +9,11 @@
 
 
 
-const int NUM_COMPONENTS = 9;
+const int NUM_COMPONENTS = 12;
 const int NUM_ROWS = 3;
+const int MAX_PHRASE = 999;
+const int MAX_BAR = 99;
+const int MAX_BEAT = 99; 
 struct Seeqwensah : Module {
 	enum ParamIds {
 		RESET_PARAM,
@@ -47,6 +50,8 @@ struct Seeqwensah : Module {
 	SchmittTrigger clockTrigger;
 	SchmittTrigger resetTrigger;
 	SchmittTrigger resetButton;
+	SchmittTrigger beatUp;
+	SchmittTrigger beatDown;
     bool isBeat = false ; //will be true for every clock pulse input
 	bool isReset = false;
 	// Counts will be used for internal logic, displays will be for graphics
@@ -80,7 +85,7 @@ struct Seeqwensah : Module {
 		
 	};
 
-Component components [NUM_COMPONENTS];
+Component components [NUM_COMPONENTS]; 
 
 void setBar(int i){
 	components[i].hasChosenBar = true;
@@ -190,7 +195,7 @@ void Seeqwensah::step() {
 
 			}
 
-
+			// Send reset pulse out if compenent begins/ends clock output
 			if(components[i].resetPulseOut.process(deltaTime)){
 				outputs[RESETS_OUT+i].value = 10.0f;
 			}
@@ -235,10 +240,10 @@ struct TimeDisplayWidget : TransparentWidget{
 		nvgFontSize(vg, 20);
 		nvgFontFaceId(vg, font->handle);
 		nvgTextLetterSpacing(vg, 2);
-		Vec textPos = Vec(140,40);
+		Vec textPos = Vec(330,40);
 		nvgFillColor(vg, nvgRGBA(0xff, 0x18, 0x00, 0xff));
 		char text[250];
-		snprintf(text, sizeof(text), "%02u  :  %02u  :  %02u",((unsigned) *phrase),((unsigned) *bar),((unsigned) *beat));
+		snprintf(text, sizeof(text), "%03u  :  %02u  :  %02u",((unsigned) *phrase),((unsigned) *bar),((unsigned) *beat));
 		nvgText(vg, textPos.x, textPos.y, text, NULL);
 	}
 };
@@ -260,18 +265,17 @@ struct SeeqwensahWidget : ModuleWidget {
 		addParam(ParamWidget::create<LEDButton>(Vec(10,53), module, Seeqwensah::RESET_PARAM, 0.0, 1.0, 0.0));//arm button
 		addChild(ModuleLightWidget::create<MediumLight<RedLight>>(Vec(14,57),module, Seeqwensah::RESET_LIGHT));
 
-
 		//Adds graphics to module. Takes values from PhaseTrigger and passes to displayWidgets
 		{
-		 	TimeDisplayWidget *beatDisplay = new TimeDisplayWidget();
-			beatDisplay->beat = (&module->beatDisplay);
-			beatDisplay->bar = &module->barDisplay;
-			beatDisplay->phrase = &module->phraseDisplay;
-			addChild(beatDisplay);
+		 	TimeDisplayWidget *timeDisplay = new TimeDisplayWidget();
+			timeDisplay->beat = (&module->beatDisplay);
+			timeDisplay->bar = &module->barDisplay;
+			timeDisplay->phrase = &module->phraseDisplay;
+			addChild(timeDisplay);
 		}
 
-		//Didn't use inner loops because that would require enums within enums and that could get messy
-		static const  float portX[4] = {20, 140, 260};
+		//Didn't use inner loops rows/columns because that would require enums within enums and that could get messy
+		static const  float portX[4] = {55, 175, 295, 415};
 		int count = 0;
 		static const float row1Y = 100;
 		for(int i = 0; i < NUM_COMPONENTS/NUM_ROWS; i++){
