@@ -9,7 +9,7 @@
 #include "rack.hpp"
 
 
-;
+
 
 
 struct Seeqwensah : Module {
@@ -63,6 +63,14 @@ TextField* textField [8];
 			json_t *textJ = json_object_get(rootJ, "text"+ i);
 			if (textJ)
 			textField[i]->text = json_string_value(textJ);
+		}
+	}
+
+
+	void onReset() override{
+		resetModule();
+		for(int i = 0 ; i < 8; i++){
+			textField[i]->text = "";
 		}
 	}
 
@@ -157,7 +165,7 @@ TextField* textField [8];
 		beatDisplay = beatCount - 1; //prevents display from being off by one as it gets updated AFTER beat count incremement 
 		if (beatCount > beatsPerBar){
 			beatCount = 1;
-		barCount++;
+			barCount++;
 		}
 		if (barCount > barsPerPhrase){
 			barCount = 1;
