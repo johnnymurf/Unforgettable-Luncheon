@@ -10,8 +10,6 @@
 
 
 
-
-
 struct Seeqwensah : Module {
 const int MAX_PHRASE = 999;
 const int MAX_BAR = 99;
@@ -42,6 +40,7 @@ TextField* textField [8];
 		ENUMS(ARM_LIGHT, 8),
 		ENUMS(ARM_BAR_LIGHTS, 8),
 		ENUMS(ARM_PHRASE_LIGHTS, 8),
+		ENUMS(COMPONENT_ACTIVE_LIGHTS,8),
 		NUM_LIGHTS
 	};
 
@@ -106,10 +105,10 @@ TextField* textField [8];
  
 		bool isArmed = false;
 		bool armButton = false;
-			bool armInput = false;
-			bool hasChosenBar = true; //default will be trigger on bar  
-			bool hasChosenPhrase = false;
-			bool openTrigger = false;
+		bool armInput = false;
+		bool hasChosenBar = true; //default will be trigger on bar  
+		bool hasChosenPhrase = false;
+		bool openTrigger = false;
 			
 		};
 	
@@ -233,7 +232,11 @@ void Seeqwensah::step() {
 		lights[ARM_LIGHT + i].value = components[i].isArmed;
 		lights[ARM_BAR_LIGHTS + i].value = components[i].hasChosenBar;
 		lights[ARM_PHRASE_LIGHTS + i].value = components[i].hasChosenPhrase;
+		lights[COMPONENT_ACTIVE_LIGHTS+i].value = components[i].openTrigger;
 	}
+	
+
+
 	
 	if( resetTrigger.process(inputs[RESET_INPUT].value)  || resetButton.process(params[RESET_PARAM].value) ){
 		resetModule();
@@ -293,12 +296,6 @@ struct SeeqwensahWidget : ModuleWidget {
 		timeDisplay->bar = &module->barDisplay;
 		timeDisplay->phrase = &module->phraseDisplay;
 		addChild(timeDisplay);
-		
-
-		
-
-		
-
 
 		//Didn't use inner loops rows/columns because that would require enums within enums and that could get messy
 		static const  float portX[4] = {55, 175, 295, 415};
@@ -309,6 +306,7 @@ struct SeeqwensahWidget : ModuleWidget {
     		module->textField[i]->box.size = Vec(72, 30);
     		module->textField[i]->multiline = false;
 			addChild(module->textField[i]);
+			addChild(ModuleLightWidget::create<SmallLight<RedLight>>(Vec(portX[i]+ 32.0f, row1Y - 45), module,Seeqwensah::COMPONENT_ACTIVE_LIGHTS + i));
 			// left button
 			addParam(ParamWidget::create<LEDButton>(Vec(portX[i],row1Y + 20), module, Seeqwensah::ARM_BAR + i,0.0, 1.0, 0.0));//select to trigger on bar
 			addChild(ModuleLightWidget::create<MediumLight<GreenLight>>(Vec(portX[i]+4.0f,row1Y+24),module, Seeqwensah::ARM_BAR_LIGHTS + i));
@@ -321,7 +319,7 @@ struct SeeqwensahWidget : ModuleWidget {
 			addChild(ModuleLightWidget::create<MediumLight<BlueLight>>(Vec(portX[i]+56.0f,row1Y+24),module, Seeqwensah::ARM_PHRASE_LIGHTS + i));
 			addInput(Port::create<PJ301MPort>(Vec(portX[i] - 2, row1Y + 52), Port::INPUT, module, Seeqwensah::CLOCKS_IN + i));
 			addOutput(Port::create<PJ301MPort>(Vec(portX[i] + 23, row1Y + 52), Port::OUTPUT, module, Seeqwensah::CLOCKS_OUT + i));
-			addOutput(Port::create<PJ301MPort>(Vec(portX[i] + 47, row1Y + 52), Port::OUTPUT, module, Seeqwensah::RESETS_OUT + i));
+			addOutput(Port::create<PJ301MPort>(Vec(portX[i] + 48, row1Y + 52), Port::OUTPUT, module, Seeqwensah::RESETS_OUT + i));
 			
 			count++;
 		}
@@ -332,6 +330,10 @@ struct SeeqwensahWidget : ModuleWidget {
     		module->textField[count]->box.size = Vec(72, 30);
     		module->textField[count]->multiline = false;
 			addChild(module->textField[count]);
+			addChild(ModuleLightWidget::create<SmallLight<RedLight>>(Vec(portX[i]+ 32.0f, row2Y - 45), module,Seeqwensah::COMPONENT_ACTIVE_LIGHTS + count));
+			//	addChild(ModuleLightWidget::create<SmallLight<GreenRedLight>>(Vec(68, 42.5f), module, LFO2::PHASE_POS_LIGHT));
+			//addChild(ModuleLightWidget::create<LEDBezelLight<RedLight>>(Vec(portX[i]+26.0f, row2Y + 2.0f), module, Seeqwensah::ARM_LIGHT + count));//arm button light
+
 			addParam(ParamWidget::create<LEDButton>(Vec(portX[i],row2Y + 20), module, Seeqwensah::ARM_BAR + count,0.0, 1.0, 0.0));//select to trigger on bar
 			addChild(ModuleLightWidget::create<MediumLight<GreenLight>>(Vec(portX[i]+4.0f,row2Y+24),module, Seeqwensah::ARM_BAR_LIGHTS + count));
 			//top button
