@@ -14,9 +14,9 @@ This will change in the future allowing the user to set the lengths.
 Useful in a live setting or just when you want to jam out.
 
 Please take a moment to read the manual. 
-###Seeqwensah needs to be run my another clock module.
+### Seeqwensah needs to be run my another clock module.
 
-![alt text] (https://github.com/johnnymurf/Unforgettable-Luncheon/blob/master/res/SeeqwensahManual.png)
+![alt text](https://github.com/johnnymurf/Unforgettable-Luncheon/blob/master/res/SeeqwensahManual.png)
 
 *The top left input is the Master Clock. This takes the beat of the clock.
 
@@ -39,11 +39,11 @@ Please take a moment to read the manual.
     to use it to play a sequencer that doesn't require a clock input.
 
 
-###Example patch:
+### Example patch:
 
 ![alt text](https://github.com/johnnymurf/Unforgettable-Luncheon/blob/master/res/SeeqwensahExample2.png)
 
-#Bugs / weird behaviour
+# Bugs / weird behaviour
 Some sequencers don't reset to the start of their sequence missing the first beat, which can lead to annoying behaviour.
 Piano roll from RCM and Impromptu Modular's sequencers seem to work fine. 
 The only bug encountered so far is that it very very rarely will not keep the sequencers in time.
