@@ -40,7 +40,7 @@ Please take a moment to read the manual.
 
 * Clock Input takes whatever clock pulse is sent into it. Clock Output emits it if component is on.
 
-*Trigger Out emits a pulse on the 1st beat of being turned on and last beat of turned off. 
+* Trigger Out emits a pulse on the 1st beat of being turned on and last beat of turned off. 
     This is useful for reseting sequences to keep them in time. Also useful if you just want 
     to use it to play a sequencer that doesn't require a clock input.
 
@@ -52,6 +52,7 @@ Please take a moment to read the manual.
 # Bugs / weird behaviour
 Some sequencers don't reset to the start of their sequence missing the first beat, which can lead to annoying behaviour.
 Piano roll from RCM and Impromptu Modular's sequencers seem to work fine. 
+
 The only bug encountered so far is that it very very rarely will not keep the sequencers in time.
 This seems to only happen when reloading VCV rack and it shows the same patch as when it was closed.
 Arming/Disarming all modules tends to fix this. Its usually only one sequencer causing the problem.
