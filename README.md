@@ -18,7 +18,7 @@ Useful in a live setting or just when you want to jam out.
 Please take a moment to read the manual.
 
 
-### Seeqwensah needs to be run my another clock module.
+### Seeqwensah needs to be run by another clock module.
 
 
 
