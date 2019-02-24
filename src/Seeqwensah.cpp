@@ -18,6 +18,8 @@ TextField* textField [8];
 
 	enum ParamIds {
 		RESET_PARAM,
+		PHRASE_UP_PARAM,
+		PHRASE_DOWN_PARAM,
 		ENUMS(ARM_PARAM, 8),
 		ENUMS(ARM_BAR, 8),
 		ENUMS(ARM_PHRASE, 8),
@@ -77,8 +79,11 @@ TextField* textField [8];
 	SchmittTrigger clockTrigger;
 	SchmittTrigger resetTrigger;
 	SchmittTrigger resetButton;
+
 	SchmittTrigger beatUp;
 	SchmittTrigger beatDown;
+	SchmittTrigger phraseUp;
+	SchmittTrigger phraseDown;
     bool isBeat = false ; //will be true for every clock pulse input
 	bool isReset = false;
 	// Counts will be used for internal logic, displays will be for graphics
@@ -97,9 +102,13 @@ TextField* textField [8];
 		SchmittTrigger armButtonTrigger;
 		SchmittTrigger armInputTrigger;
 		SchmittTrigger clockTrigger;
+
 		SchmittTrigger armBar;
 		SchmittTrigger armPhrase;
+
 		SchmittTrigger resetOutOnOff;
+
+
 		PulseGenerator pulseOut;
 		PulseGenerator resetPulseOut;
  
@@ -177,10 +186,18 @@ TextField* textField [8];
 
 };
 
+
+
+
+
+
 void Seeqwensah::step() {
-		deltaTime = engineGetSampleTime();
-		//True if input to clock is high (receiving input from clock source) 			
-		isBeat = clockTrigger.process(inputs[MASTER_CLOCK].value);
+
+
+	deltaTime = engineGetSampleTime();
+
+	//True if input to clock is high (receiving input from clock source) 			
+	isBeat = clockTrigger.process(inputs[MASTER_CLOCK].value);
 	
 	// Loop through all components 
 	for(int i = 0; i < 8; i++){
@@ -247,6 +264,17 @@ void Seeqwensah::step() {
 	}
 	lights[RESET_LIGHT].setBrightnessSmooth(resetTrigger.isHigh());
 	lights[RESET_LIGHT].setBrightnessSmooth(resetButton.isHigh());
+
+
+	if(phraseUp.process(params[PHRASE_UP_PARAM].value) ){
+		barsPerPhrase++;
+	}
+	if(phraseDown.process(params[PHRASE_DOWN_PARAM].value)){
+		barsPerPhrase--;
+		if(barsPerPhrase < 1) {
+			barsPerPhrase = 1;
+		}
+	}
 };
 
 
@@ -289,6 +317,10 @@ struct SeeqwensahWidget : ModuleWidget {
 		addInput(Port::create<PJ301MPort>(Vec(33, 50), Port::INPUT, module, Seeqwensah::RESET_INPUT));
 		addParam(ParamWidget::create<LEDButton>(Vec(10,53), module, Seeqwensah::RESET_PARAM, 0.0, 1.0, 0.0));//arm button
 		addChild(ModuleLightWidget::create<MediumLight<RedLight>>(Vec(14,57),module, Seeqwensah::RESET_LIGHT));
+
+		//User selects Phrase length
+		addParam(ParamWidget::create<ULSmallButton>(Vec(440,20),module,Seeqwensah::PHRASE_UP_PARAM, 0.0,10.0f,0.0));
+		addParam(ParamWidget::create<ULSmallButton>(Vec(440,35),module,Seeqwensah::PHRASE_DOWN_PARAM, 0.0,10.0f,0.0));
 
 		//Adds graphics to module. Takes values from PhaseTrigger and passes to displayWidgets
 		TimeDisplayWidget *timeDisplay = new TimeDisplayWidget();
