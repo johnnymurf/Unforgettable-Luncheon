@@ -18,8 +18,10 @@ TextField* textField [8];
 
 	enum ParamIds {
 		RESET_PARAM,
-		PHRASE_UP_PARAM,
-		PHRASE_DOWN_PARAM,
+		PHRASE_LENGTH_UP_PARAM,
+		PHRASE_LENGTH_DOWN_PARAM,
+		BAR_LENGTH_UP_PARAM,
+		BAR_LENGTH_DOWN_PARAM,
 		ENUMS(ARM_PARAM, 8),
 		ENUMS(ARM_BAR, 8),
 		ENUMS(ARM_PHRASE, 8),
@@ -80,10 +82,10 @@ TextField* textField [8];
 	SchmittTrigger resetTrigger;
 	SchmittTrigger resetButton;
 
-	SchmittTrigger beatUp;
-	SchmittTrigger beatDown;
-	SchmittTrigger phraseUp;
-	SchmittTrigger phraseDown;
+	SchmittTrigger barLengthUpButton;
+	SchmittTrigger barLengthDownButton;
+	SchmittTrigger phraseLengthUpButton;
+	SchmittTrigger phraseLengthDownButton;
     bool isBeat = false ; //will be true for every clock pulse input
 	bool isReset = false;
 	// Counts will be used for internal logic, displays will be for graphics
@@ -254,22 +256,35 @@ void Seeqwensah::step() {
 	
 
 
-	
 	if( resetTrigger.process(inputs[RESET_INPUT].value)  || resetButton.process(params[RESET_PARAM].value) ){
 		resetModule();
-	}
-	//Incremement beat counters;
-	if(isBeat && !resetButton.process(params[RESET_PARAM].value) ){
-		incrementBeat();
 	}
 	lights[RESET_LIGHT].setBrightnessSmooth(resetTrigger.isHigh());
 	lights[RESET_LIGHT].setBrightnessSmooth(resetButton.isHigh());
 
 
-	if(phraseUp.process(params[PHRASE_UP_PARAM].value) ){
+	//Incremement beat counters;
+	if(isBeat && !resetButton.process(params[RESET_PARAM].value) ){
+		incrementBeat();
+	}
+
+
+
+
+	//Check if user change length of bar/phrase
+	if(barLengthUpButton.process(params[BAR_LENGTH_UP_PARAM].value)){
+		beatsPerBar++;
+	}
+	if(barLengthDownButton.process(params[BAR_LENGTH_DOWN_PARAM].value)){
+		beatsPerBar--;
+		if(beatsPerBar < 1){
+			beatsPerBar = 1;
+		}
+	}
+	if(phraseLengthUpButton.process(params[PHRASE_LENGTH_UP_PARAM].value) ){
 		barsPerPhrase++;
 	}
-	if(phraseDown.process(params[PHRASE_DOWN_PARAM].value)){
+	if(phraseLengthDownButton.process(params[PHRASE_LENGTH_DOWN_PARAM].value)){
 		barsPerPhrase--;
 		if(barsPerPhrase < 1) {
 			barsPerPhrase = 1;
@@ -318,9 +333,11 @@ struct SeeqwensahWidget : ModuleWidget {
 		addParam(ParamWidget::create<LEDButton>(Vec(10,53), module, Seeqwensah::RESET_PARAM, 0.0, 1.0, 0.0));//arm button
 		addChild(ModuleLightWidget::create<MediumLight<RedLight>>(Vec(14,57),module, Seeqwensah::RESET_LIGHT));
 
+		addParam(ParamWidget::create<ULSmallButton>(Vec(420,20),module,Seeqwensah::BAR_LENGTH_UP_PARAM, 0.0,10.0f,0.0));
+		addParam(ParamWidget::create<ULSmallButton>(Vec(420,35),module,Seeqwensah::BAR_LENGTH_DOWN_PARAM, 0.0,10.0f,0.0));
 		//User selects Phrase length
-		addParam(ParamWidget::create<ULSmallButton>(Vec(440,20),module,Seeqwensah::PHRASE_UP_PARAM, 0.0,10.0f,0.0));
-		addParam(ParamWidget::create<ULSmallButton>(Vec(440,35),module,Seeqwensah::PHRASE_DOWN_PARAM, 0.0,10.0f,0.0));
+		addParam(ParamWidget::create<ULSmallButton>(Vec(455,20),module,Seeqwensah::PHRASE_LENGTH_UP_PARAM, 0.0,10.0f,0.0));
+		addParam(ParamWidget::create<ULSmallButton>(Vec(455,35),module,Seeqwensah::PHRASE_LENGTH_DOWN_PARAM, 0.0,10.0f,0.0));
 
 		//Adds graphics to module. Takes values from PhaseTrigger and passes to displayWidgets
 		TimeDisplayWidget *timeDisplay = new TimeDisplayWidget();
