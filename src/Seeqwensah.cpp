@@ -30,7 +30,7 @@ TextField* textField [8];
 	 };
 	enum InputIds {
 		MASTER_CLOCK,
-		RUNNING_INPUT,
+		RUN_INPUT,
 		RESET_INPUT,
 		ENUMS(ARM_INPUT, 8),
 		ENUMS(CLOCKS_IN, 8),
@@ -118,7 +118,6 @@ TextField* textField [8];
 
 		SchmittTrigger resetOutOnOff;
 
-
 		PulseGenerator pulseOut;
 		PulseGenerator resetPulseOut;
  
@@ -129,10 +128,12 @@ TextField* textField [8];
 		bool hasChosenPhrase = false;
 		bool openTrigger = false;
 			
-		};
+	};
 	
 	Component components [8]; 
 	
+
+
 	void setBar(int i){
 		components[i].hasChosenBar = true;
 		components[i].hasChosenPhrase = false;
@@ -173,6 +174,8 @@ TextField* textField [8];
 		for(int i = 0; i < 8; i++){
 			components[i].openTrigger = false;
 			components[i].isArmed = false;
+			lights[COMPONENT_ACTIVE_LIGHTS+i].value = 0.0f;
+		
 		}
 	}
 	
@@ -210,7 +213,7 @@ void Seeqwensah::step() {
 	//True if input to clock is high (receiving input from clock source) 			
 	isBeat = clockTrigger.process(inputs[MASTER_CLOCK].value);
 
-	// Has to be outside for loop to allow user choose bar or phrase before running 
+
 	for(int i = 0; i < 8 ; i++){
 		// User selects to output on bar or phrase
 		if(components[i].armBar.process(params[ARM_BAR+i].value)){
@@ -229,7 +232,7 @@ void Seeqwensah::step() {
 		if((components[i].armButton || components[i].armInput) && components[i].isArmed){
 			disarmModule(i);
 		}
-		// outputs - will pulse if on the beat or show light if it is armed and if its set to output on bar or phrase
+
 		lights[ARM_LIGHT + i].value = components[i].isArmed;
 		lights[ARM_BAR_LIGHTS + i].value = components[i].hasChosenBar;
 		lights[ARM_PHRASE_LIGHTS + i].value = components[i].hasChosenPhrase;
@@ -263,26 +266,22 @@ void Seeqwensah::step() {
 				outputs[RESETS_OUT+i].value = 0.0f;
 			}
 
-
 			lights[COMPONENT_ACTIVE_LIGHTS+i].value = components[i].openTrigger;
 		}
 
 		//Incremement beat counters;
-	if(isBeat && !resetButton.process(params[RESET_PARAM].value) ){
-		incrementBeat();
-	}
+		if(isBeat && !resetButton.process(params[RESET_PARAM].value) ){
+			incrementBeat();
+		}
 
 	}	
 	//user runs
-	if(runButton.process(params[RUNNING_PARAM].value)){
+	if(runButton.process(params[RUNNING_PARAM].value) || runTrigger.process(inputs[RUN_INPUT].value)){
 		isRunning = !isRunning;
-		printf("test \n ");
 		if(isRunning){
-			printf("Run\n");
 			lights[RUN_LIGHT].value = 10.0f;
 		}
 		else{
-			printf("Stop run\n");
 			lights[RUN_LIGHT].value = 0.0f;
 		}
 	}
@@ -393,16 +392,18 @@ struct SeeqwensahWidget : ModuleWidget {
 		addChild(Widget::create<ScrewSilver>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
 
 		//Used for CLock input 
-		addInput(Port::create<PJ301MPort>(Vec(33, 20), Port::INPUT, module, Seeqwensah::MASTER_CLOCK));
-		addInput(Port::create<PJ301MPort>(Vec(33, 50), Port::INPUT, module, Seeqwensah::RESET_INPUT));
+		addInput(Port::create<PJ301MPort>(Vec(15, 40), Port::INPUT, module, Seeqwensah::MASTER_CLOCK));
+		
 
 		//Run
-		addParam(ParamWidget::create<LEDBezel>(Vec(88,28), module, Seeqwensah::RUNNING_PARAM, 0.0, 1.0, 0.0));
-		addChild(ModuleLightWidget::create<LEDBezelLight<RedLight>>(Vec(90,30), module, Seeqwensah::RUN_LIGHT));
+		addParam(ParamWidget::create<LEDBezel>(Vec(120,12), module, Seeqwensah::RUNNING_PARAM, 0.0, 1.0, 0.0));
+		addChild(ModuleLightWidget::create<LEDBezelLight<RedLight>>(Vec(122,14), module, Seeqwensah::RUN_LIGHT));
+		addInput(Port::create<PJ301MPort>(Vec(119, 40), Port::INPUT, module, Seeqwensah::RUN_INPUT));
 
 		//Reset
-		addParam(ParamWidget::create<LEDButton>(Vec(10,53), module, Seeqwensah::RESET_PARAM, 0.0, 1.0, 0.0));
-		addChild(ModuleLightWidget::create<MediumLight<RedLight>>(Vec(14,57),module, Seeqwensah::RESET_LIGHT));
+		addParam(ParamWidget::create<LEDButton>(Vec(54,14), module, Seeqwensah::RESET_PARAM, 0.0, 1.0, 0.0));
+		addChild(ModuleLightWidget::create<MediumLight<RedLight>>(Vec(58,18),module, Seeqwensah::RESET_LIGHT));
+		addInput(Port::create<PJ301MPort>(Vec(51, 40), Port::INPUT, module, Seeqwensah::RESET_INPUT));
 
 		//User selects Phrase / bar length 
 		addParam(ParamWidget::create<ULSmallButton>(Vec(390,20),module,Seeqwensah::PHRASE_LENGTH_UP_PARAM, 0.0,10.0f,0.0));
