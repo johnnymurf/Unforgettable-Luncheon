@@ -307,10 +307,46 @@ int *phrase;
 			nvgFontSize(vg, 20);
 			nvgFontFaceId(vg, font->handle);
 			nvgTextLetterSpacing(vg, 2);
-			Vec textPos = Vec(185,45);
+			Vec textPos = Vec(180,43);
 			nvgFillColor(vg, nvgRGBA(0xff, 0x18, 0x00, 0xff));
 			char text[250];
 			snprintf(text, sizeof(text), "%03u  :  %02u  :  %02u",((unsigned) *phrase),((unsigned) *bar),((unsigned) *beat));
+			nvgText(vg, textPos.x, textPos.y, text, NULL);
+		}
+};
+struct BarLengthDisplayWidget : TransparentWidget{
+	int *beatsPerBar;
+	std::shared_ptr<Font> font;
+
+	BarLengthDisplayWidget(){
+		font = Font::load(assetPlugin(plugin,"res/DSEG14Classic-Italic.ttf"));
+		}
+		void draw(NVGcontext *vg) override{
+			nvgFontSize(vg,20);
+			nvgFontFaceId(vg, font->handle);
+			nvgTextLetterSpacing(vg, 2);
+			Vec textPos = Vec(485,43);
+			nvgFillColor(vg, nvgRGBA(0xff, 0x18, 0x00, 0xff));
+			char text[250];
+			snprintf(text, sizeof(text),"%02u",((unsigned) *beatsPerBar));
+			nvgText(vg, textPos.x, textPos.y, text, NULL);
+		}
+};
+struct PhraseLengthDisplayWidget : TransparentWidget{
+	int *barsPerPhrase;
+	std::shared_ptr<Font> font;
+
+	PhraseLengthDisplayWidget(){
+		font = Font::load(assetPlugin(plugin,"res/DSEG14Classic-Italic.ttf"));
+		}
+		void draw(NVGcontext *vg) override{
+			nvgFontSize(vg,20);
+			nvgFontFaceId(vg, font->handle);
+			nvgTextLetterSpacing(vg, 2);
+			Vec textPos = Vec(410,43);
+			nvgFillColor(vg, nvgRGBA(0xff, 0x18, 0x00, 0xff));
+			char text[250];
+			snprintf(text, sizeof(text),"%02u",((unsigned) *barsPerPhrase));
 			nvgText(vg, textPos.x, textPos.y, text, NULL);
 		}
 };
@@ -333,11 +369,13 @@ struct SeeqwensahWidget : ModuleWidget {
 		addParam(ParamWidget::create<LEDButton>(Vec(10,53), module, Seeqwensah::RESET_PARAM, 0.0, 1.0, 0.0));//arm button
 		addChild(ModuleLightWidget::create<MediumLight<RedLight>>(Vec(14,57),module, Seeqwensah::RESET_LIGHT));
 
-		addParam(ParamWidget::create<ULSmallButton>(Vec(420,20),module,Seeqwensah::BAR_LENGTH_UP_PARAM, 0.0,10.0f,0.0));
-		addParam(ParamWidget::create<ULSmallButton>(Vec(420,35),module,Seeqwensah::BAR_LENGTH_DOWN_PARAM, 0.0,10.0f,0.0));
 		//User selects Phrase length
-		addParam(ParamWidget::create<ULSmallButton>(Vec(455,20),module,Seeqwensah::PHRASE_LENGTH_UP_PARAM, 0.0,10.0f,0.0));
-		addParam(ParamWidget::create<ULSmallButton>(Vec(455,35),module,Seeqwensah::PHRASE_LENGTH_DOWN_PARAM, 0.0,10.0f,0.0));
+		addParam(ParamWidget::create<ULSmallButton>(Vec(390,20),module,Seeqwensah::PHRASE_LENGTH_UP_PARAM, 0.0,10.0f,0.0));
+		addParam(ParamWidget::create<ULSmallButton>(Vec(390,35),module,Seeqwensah::PHRASE_LENGTH_DOWN_PARAM, 0.0,10.0f,0.0));
+
+		addParam(ParamWidget::create<ULSmallButton>(Vec(465,20),module,Seeqwensah::BAR_LENGTH_UP_PARAM, 0.0,10.0f,0.0));
+		addParam(ParamWidget::create<ULSmallButton>(Vec(465,35),module,Seeqwensah::BAR_LENGTH_DOWN_PARAM, 0.0,10.0f,0.0));
+	
 
 		//Adds graphics to module. Takes values from PhaseTrigger and passes to displayWidgets
 		TimeDisplayWidget *timeDisplay = new TimeDisplayWidget();
@@ -345,6 +383,14 @@ struct SeeqwensahWidget : ModuleWidget {
 		timeDisplay->bar = &module->barDisplay;
 		timeDisplay->phrase = &module->phraseDisplay;
 		addChild(timeDisplay);
+
+		//phrase and bar length graphics
+		BarLengthDisplayWidget *barDisplay = new BarLengthDisplayWidget();
+		barDisplay->beatsPerBar = &module->beatsPerBar;
+		addChild(barDisplay);
+		PhraseLengthDisplayWidget *phraseDisplay = new PhraseLengthDisplayWidget();
+		phraseDisplay->barsPerPhrase = &module->barsPerPhrase;
+		addChild(phraseDisplay);
 
 		//Didn't use inner loops rows/columns because that would require enums within enums and that could get messy
 		static const  float portX[4] = {55, 175, 295, 415};

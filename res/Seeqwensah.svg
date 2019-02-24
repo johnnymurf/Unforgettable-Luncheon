@@ -988,7 +988,7 @@
      inkscape:pageshadow="2"
      inkscape:zoom="1.8685514"
      inkscape:cx="333.10205"
-     inkscape:cy="234.71491"
+     inkscape:cy="216.32602"
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
      showgrid="false"
@@ -1042,9 +1042,27 @@
        id="rect6432"
        width="54.529785"
        height="7.7320013"
-       x="45.814159"
-       y="201.51648"
+       x="43.123798"
+       y="201.23328"
        ry="2.0045166" />
+    <rect
+       style="opacity:1;fill:#2b0000;fill-opacity:1;stroke:#000000;stroke-width:0.06341902;stroke-opacity:1"
+       id="rect6432-3"
+       width="11.557642"
+       height="7.8056836"
+       x="106.72993"
+       y="201.0584"
+       ry="2.0236187"
+       inkscape:transform-center-x="-0.56639245"
+       inkscape:transform-center-y="0.14159811" />
+    <rect
+       style="opacity:1;fill:#2b0000;fill-opacity:1;stroke:#000000;stroke-width:0.06341902;stroke-opacity:1"
+       id="rect6432-3-6"
+       width="11.557643"
+       height="7.8056836"
+       x="126.83685"
+       y="201.0584"
+       ry="2.0236187" />
   </g>
   <g
      inkscape:groupmode="layer"
