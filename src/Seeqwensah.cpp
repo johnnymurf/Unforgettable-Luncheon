@@ -17,6 +17,7 @@ const int MAX_BEAT = 99;
 TextField* textField [8];
 
 	enum ParamIds {
+		RUNNING_PARAM,
 		RESET_PARAM,
 		PHRASE_LENGTH_UP_PARAM,
 		PHRASE_LENGTH_DOWN_PARAM,
@@ -29,6 +30,7 @@ TextField* textField [8];
 	 };
 	enum InputIds {
 		MASTER_CLOCK,
+		RUNNING_INPUT,
 		RESET_INPUT,
 		ENUMS(ARM_INPUT, 8),
 		ENUMS(CLOCKS_IN, 8),
@@ -40,6 +42,7 @@ TextField* textField [8];
 		NUM_OUTPUTS
 	};
 	enum LightIds {
+		RUN_LIGHT,
 		RESET_LIGHT,
 		ENUMS(ARM_LIGHT, 8),
 		ENUMS(ARM_BAR_LIGHTS, 8),
@@ -77,10 +80,13 @@ TextField* textField [8];
 		}
 	}
 
-
+	//used for master clock input
 	SchmittTrigger clockTrigger;
+	// resetTrigger used for CV input, resetButton used for mouse presses
 	SchmittTrigger resetTrigger;
 	SchmittTrigger resetButton;
+	SchmittTrigger runButton;
+	SchmittTrigger runTrigger;
 
 	SchmittTrigger barLengthUpButton;
 	SchmittTrigger barLengthDownButton;
@@ -88,6 +94,8 @@ TextField* textField [8];
 	SchmittTrigger phraseLengthDownButton;
     bool isBeat = false ; //will be true for every clock pulse input
 	bool isReset = false;
+
+	bool isRunning = false;
 	// Counts will be used for internal logic, displays will be for graphics
 	int beatCount = 1;
 	int beatDisplay = 0;
@@ -155,6 +163,7 @@ TextField* textField [8];
 	}
 	
 	void resetModule(){
+		isRunning = false;
 		beatCount = 1; 
 		barCount = 1;
 		phraseCount = 1;
@@ -200,21 +209,19 @@ void Seeqwensah::step() {
 
 	//True if input to clock is high (receiving input from clock source) 			
 	isBeat = clockTrigger.process(inputs[MASTER_CLOCK].value);
-	
-	// Loop through all components 
-	for(int i = 0; i < 8; i++){
-		// check if user has armed a component 
-		components[i].armButton = components[i].armButtonTrigger.process(params[ARM_PARAM+i].value);
-		components[i].armInput = components[i].armInputTrigger.process(inputs[ARM_INPUT+i].value);
-		
-		
+
+	// Has to be outside for loop to allow user choose bar or phrase before running 
+	for(int i = 0; i < 8 ; i++){
 		// User selects to output on bar or phrase
 		if(components[i].armBar.process(params[ARM_BAR+i].value)){
-			setBar(i);
+				setBar(i);
 		}
 		if(components[i].armPhrase.process(params[ARM_PHRASE+i].value)){
-			setPhrase(i);
+				setPhrase(i);	
 		}
+		// check if user has armed a component 
+		components[i].armButton = components[i].armButtonTrigger.process(params[ARM_PARAM+i].value);
+		components[i].armInput = components[i].armInputTrigger.process(inputs[ARM_INPUT+i].value);	
 		// Arm or Disarm the component 
 		if((components[i].armButton || components[i].armInput) && !components[i].isArmed){
 			armModule(i);
@@ -222,51 +229,73 @@ void Seeqwensah::step() {
 		if((components[i].armButton || components[i].armInput) && components[i].isArmed){
 			disarmModule(i);
 		}
-		// if armed and user selected Phrase
-		if((barCount == 1 && beatCount == 1) &&  isBeat && components[i].hasChosenPhrase && components[i].isArmed){
-			outputTriggerEngage(i);
-		 }
-		//  if armed and user selected Bar
-		if((beatCount == 1) && isBeat && components[i].hasChosenBar && components[i].isArmed){
-			outputTriggerEngage(i);
-		}
-		
-		if(components[i].openTrigger){
-			if(components[i].clockTrigger.process(inputs[CLOCKS_IN+ i].value)){
-				outputs[CLOCKS_OUT+i].value = 10.0f;
-			}
-			else{
-				outputs[CLOCKS_OUT+i].value = 0.0f;
-			}
-		}
-		// Send reset pulse out if compenent begins/ends clock output
-		if(components[i].resetPulseOut.process(deltaTime)){
-			outputs[RESETS_OUT+i].value = 10.0f;
-		}
-		if(!components[i].resetPulseOut.process(deltaTime)){
-			outputs[RESETS_OUT+i].value = 0.0f;
-		}
-		
-	    // outputs - will pulse if on the beat or show light if it is armed and if its set to output on bar or phrase
+		// outputs - will pulse if on the beat or show light if it is armed and if its set to output on bar or phrase
 		lights[ARM_LIGHT + i].value = components[i].isArmed;
 		lights[ARM_BAR_LIGHTS + i].value = components[i].hasChosenBar;
 		lights[ARM_PHRASE_LIGHTS + i].value = components[i].hasChosenPhrase;
-		lights[COMPONENT_ACTIVE_LIGHTS+i].value = components[i].openTrigger;
 	}
-	
+
+	if(isRunning){
+		// Loop through all components 
+		for(int i = 0; i < 8; i++){
+			// if armed and user selected Phrase
+			if((barCount == 1 && beatCount == 1) &&  isBeat && components[i].hasChosenPhrase && components[i].isArmed){
+				outputTriggerEngage(i);
+			 }
+			//  if armed and user selected Bar
+			if((beatCount == 1) && isBeat && components[i].hasChosenBar && components[i].isArmed){
+				outputTriggerEngage(i);
+			}
+
+			if(components[i].openTrigger){
+				if(components[i].clockTrigger.process(inputs[CLOCKS_IN+ i].value)){
+					outputs[CLOCKS_OUT+i].value = 10.0f;
+				}
+				else{
+					outputs[CLOCKS_OUT+i].value = 0.0f;
+				}
+			}
+			// Send reset pulse out if compenent begins/ends clock output
+			if(components[i].resetPulseOut.process(deltaTime)){
+				outputs[RESETS_OUT+i].value = 10.0f;
+			}
+			if(!components[i].resetPulseOut.process(deltaTime)){
+				outputs[RESETS_OUT+i].value = 0.0f;
+			}
 
 
+			lights[COMPONENT_ACTIVE_LIGHTS+i].value = components[i].openTrigger;
+		}
+
+		//Incremement beat counters;
+	if(isBeat && !resetButton.process(params[RESET_PARAM].value) ){
+		incrementBeat();
+	}
+
+	}	
+	//user runs
+	if(runButton.process(params[RUNNING_PARAM].value)){
+		isRunning = !isRunning;
+		printf("test \n ");
+		if(isRunning){
+			printf("Run\n");
+			lights[RUN_LIGHT].value = 10.0f;
+		}
+		else{
+			printf("Stop run\n");
+			lights[RUN_LIGHT].value = 0.0f;
+		}
+	}
+
+	//user resets
 	if( resetTrigger.process(inputs[RESET_INPUT].value)  || resetButton.process(params[RESET_PARAM].value) ){
-		resetModule();
+			resetModule();
 	}
 	lights[RESET_LIGHT].setBrightnessSmooth(resetTrigger.isHigh());
 	lights[RESET_LIGHT].setBrightnessSmooth(resetButton.isHigh());
 
 
-	//Incremement beat counters;
-	if(isBeat && !resetButton.process(params[RESET_PARAM].value) ){
-		incrementBeat();
-	}
+
 
 
 
@@ -366,13 +395,18 @@ struct SeeqwensahWidget : ModuleWidget {
 		//Used for CLock input 
 		addInput(Port::create<PJ301MPort>(Vec(33, 20), Port::INPUT, module, Seeqwensah::MASTER_CLOCK));
 		addInput(Port::create<PJ301MPort>(Vec(33, 50), Port::INPUT, module, Seeqwensah::RESET_INPUT));
-		addParam(ParamWidget::create<LEDButton>(Vec(10,53), module, Seeqwensah::RESET_PARAM, 0.0, 1.0, 0.0));//arm button
+
+		//Run
+		addParam(ParamWidget::create<LEDBezel>(Vec(88,28), module, Seeqwensah::RUNNING_PARAM, 0.0, 1.0, 0.0));
+		addChild(ModuleLightWidget::create<LEDBezelLight<RedLight>>(Vec(90,30), module, Seeqwensah::RUN_LIGHT));
+
+		//Reset
+		addParam(ParamWidget::create<LEDButton>(Vec(10,53), module, Seeqwensah::RESET_PARAM, 0.0, 1.0, 0.0));
 		addChild(ModuleLightWidget::create<MediumLight<RedLight>>(Vec(14,57),module, Seeqwensah::RESET_LIGHT));
 
-		//User selects Phrase length
+		//User selects Phrase / bar length 
 		addParam(ParamWidget::create<ULSmallButton>(Vec(390,20),module,Seeqwensah::PHRASE_LENGTH_UP_PARAM, 0.0,10.0f,0.0));
 		addParam(ParamWidget::create<ULSmallButton>(Vec(390,35),module,Seeqwensah::PHRASE_LENGTH_DOWN_PARAM, 0.0,10.0f,0.0));
-
 		addParam(ParamWidget::create<ULSmallButton>(Vec(465,20),module,Seeqwensah::BAR_LENGTH_UP_PARAM, 0.0,10.0f,0.0));
 		addParam(ParamWidget::create<ULSmallButton>(Vec(465,35),module,Seeqwensah::BAR_LENGTH_DOWN_PARAM, 0.0,10.0f,0.0));
 	
@@ -425,13 +459,12 @@ struct SeeqwensahWidget : ModuleWidget {
     		module->textField[count]->box.size = Vec(72, 30);
     		module->textField[count]->multiline = false;
 			addChild(module->textField[count]);
+
 			addChild(ModuleLightWidget::create<SmallLight<RedLight>>(Vec(portX[i]+ 32.0f, row2Y - 45), module,Seeqwensah::COMPONENT_ACTIVE_LIGHTS + count));
-			//	addChild(ModuleLightWidget::create<SmallLight<GreenRedLight>>(Vec(68, 42.5f), module, LFO2::PHASE_POS_LIGHT));
-			//addChild(ModuleLightWidget::create<LEDBezelLight<RedLight>>(Vec(portX[i]+26.0f, row2Y + 2.0f), module, Seeqwensah::ARM_LIGHT + count));//arm button light
 
 			addParam(ParamWidget::create<LEDButton>(Vec(portX[i],row2Y + 20), module, Seeqwensah::ARM_BAR + count,0.0, 1.0, 0.0));//select to trigger on bar
 			addChild(ModuleLightWidget::create<MediumLight<GreenLight>>(Vec(portX[i]+4.0f,row2Y+24),module, Seeqwensah::ARM_BAR_LIGHTS + count));
-			//top button
+			
 			addParam(ParamWidget::create<LEDBezel>(Vec(portX[i]+24,row2Y), module, Seeqwensah::ARM_PARAM + count, 0.0, 1.0, 0.0));//arm button
 			addChild(ModuleLightWidget::create<LEDBezelLight<RedLight>>(Vec(portX[i]+26.0f, row2Y + 2.0f), module, Seeqwensah::ARM_LIGHT + count));//arm button light
 			addInput(Port::create<PJ301MPort>(Vec((portX[i] + 23), row2Y + 24), Port::INPUT, module, Seeqwensah::ARM_INPUT + count));// takes input to arm module (useful for MIDI)
