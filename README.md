@@ -19,15 +19,20 @@ Please take a moment to read the manual.
 
 
 ### Seeqwensah needs to be run by another clock module.
+![alt text](https://github.com/johnnymurf/Unforgettable-Luncheon/blob/master/res/full.png)
+
 
 
 
 ![alt text](https://github.com/johnnymurf/Unforgettable-Luncheon/blob/master/res/test.png)
 
-* The top left input is the Master Clock. This takes the beat of the clock.
+* Master Clock - This takes the beat of the clock.
 
-* Below that is the reset. This resets the beat count and all componenets. 
+* Reset - This resets the beat count and all componenets. 
 
+* Run - Turns the beat count on or off. 
+
+#### Seeqwensah has 8 components 
 * Each component as small a red light. It indicates if its on or off (outputting a signal or not). 
 
 * Has editable text. Useful for keeping track of things.
