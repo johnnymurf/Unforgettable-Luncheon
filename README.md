@@ -3,6 +3,7 @@
 Modules for use with [VCV Rack](https://vcvrack.com/)
 
 ## Seeqwensah:
+![alt text](https://github.com/johnnymurf/Unforgettable-Luncheon/blob/master/res/full.png)
 
 The idea of the plugin is to sequence other sequencers, triggering them on the 1st beat of a bar or phrase. 
 
@@ -18,12 +19,6 @@ Useful in a live setting or just when you want to jam out.
 Please take a moment to read the manual.
 
 
-### Seeqwensah needs to be run by another clock module.
-![alt text](https://github.com/johnnymurf/Unforgettable-Luncheon/blob/master/res/full.png)
-
-
-
-
 ![alt text](https://github.com/johnnymurf/Unforgettable-Luncheon/blob/master/res/test.png)
 
 * Master Clock - This takes the beat of the clock.
@@ -32,7 +27,9 @@ Please take a moment to read the manual.
 
 * Run - Turns the beat count on or off. 
 
-#### Seeqwensah has 8 components 
+### Seeqwensah has 8 components 
+![alt text](https://github.com/johnnymurf/Unforgettable-Luncheon/blob/master/res/componentmanual.png)
+
 * Each component as small a red light. It indicates if its on or off (outputting a signal or not). 
 
 * Has editable text. Useful for keeping track of things.
@@ -52,7 +49,7 @@ Please take a moment to read the manual.
 
 ### Example patch:
 
-![alt text](https://github.com/johnnymurf/Unforgettable-Luncheon/blob/master/res/SeeqwensahExample2.png)
+![alt text](https://github.com/johnnymurf/Unforgettable-Luncheon/blob/master/res/example.png)
 
 # Bugs / weird behaviour
 Some sequencers don't reset to the start of their sequence missing the first beat, which can lead to annoying behaviour.
