@@ -22,7 +22,7 @@ Please take a moment to read the manual.
 
 
 
-![alt text](https://github.com/johnnymurf/Unforgettable-Luncheon/blob/master/res/SeeqwensahManual.png)
+![alt text](https://github.com/johnnymurf/Unforgettable-Luncheon/blob/master/res/test.png)
 
 * The top left input is the Master Clock. This takes the beat of the clock.
 
