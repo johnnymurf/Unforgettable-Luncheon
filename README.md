@@ -11,8 +11,8 @@ Similar in theory to how some DAWs launch clips.
 
 Users don't have to worry about being perfectly in time, as it releases on the first beat of the next bar/phrase once its armed. 
 
-Currently the plugin treats a bar as 4 beats and a phrase has 8 bars.
-This will change in the future allowing the user to set the lengths. 
+On default it's 8 bars to a phrase and 4 beats to a bar. This can be altered by the user.
+
 
 Useful in a live setting or just when you want to jam out.
 
