@@ -986,9 +986,9 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="1.8685514"
-     inkscape:cx="333.10205"
-     inkscape:cy="216.32602"
+     inkscape:zoom="1.3212654"
+     inkscape:cx="104.49798"
+     inkscape:cy="237.71329"
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
      showgrid="false"
@@ -1022,8 +1022,8 @@
      id="layer1"
      transform="translate(0.48655299,-196.45833)">
     <path
-       style="opacity:1;vector-effect:none;fill:#24221c;fill-opacity:1;fill-rule:evenodd;stroke:#000000;stroke-width:1.1815871;stroke-linecap:butt;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;paint-order:normal"
-       d="M 0.10424054,196.5625 H 141.79766 v 99.84675 H 0.10424054 Z"
+       style="opacity:1;vector-effect:none;fill:#cccccc;fill-opacity:1;fill-rule:evenodd;stroke:none;stroke-width:1.26007867;stroke-linecap:butt;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;paint-order:normal"
+       d="M -0.48655299,196.45833 H 142.38845 V 297 H -0.48655299 Z"
        id="rect817"
        inkscape:connector-curvature="0" />
     <text
@@ -1042,7 +1042,7 @@
        id="rect6432"
        width="54.529785"
        height="7.7320013"
-       x="43.123798"
+       x="45.727047"
        y="201.23328"
        ry="2.0045166" />
     <rect

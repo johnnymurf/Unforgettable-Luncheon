@@ -55,30 +55,6 @@ TextField* textField [8];
 	Seeqwensah() : Module(NUM_PARAMS,NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS) {}
 	void step() override;
 
-	json_t *toJson() override {
-		json_t *rootJ = json_object();
-
-		for(int i = 0 ; i < 8; i++){
-			json_object_set_new(rootJ, "text" + i, json_string(textField[i]->text.c_str()));
-		}
-
-		return rootJ;
-	}
-	void fromJson(json_t *rootJ) override {
-		for(int i = 0 ; i < 8; i++){
-			json_t *textJ = json_object_get(rootJ, "text"+ i);
-			if (textJ)
-			textField[i]->text = json_string_value(textJ);
-		}
-	}
-
-
-	void onReset() override{
-		resetModule();
-		for(int i = 0 ; i < 8; i++){
-			textField[i]->text = "";
-		}
-	}
 
 	//used for master clock input
 	SchmittTrigger clockTrigger;
@@ -103,10 +79,53 @@ TextField* textField [8];
 	int barDisplay = 1; 
 	int phraseCount = 1;
 	int phraseDisplay = 1;
-	int beatsPerBar = 4;
-	int barsPerPhrase = 8;
+	int beatsPerBar = 4; //default
+	int barsPerPhrase = 8; //default
 	float deltaTime = 0;
 	int totalBeats = 0;
+
+
+
+	json_t *toJson() override {
+		json_t *rootJ = json_object();
+		
+		json_object_set_new(rootJ, "beatsPerBar",json_integer(beatsPerBar));
+		json_object_set_new(rootJ, "barsPerPhrase",json_integer(barsPerPhrase));
+
+		//Save Texts
+		for(int i = 0 ; i < 8; i++){
+			json_object_set_new(rootJ, "text" + i, json_string(textField[i]->text.c_str()));
+			
+		}
+
+		return rootJ;
+	}
+
+	void fromJson(json_t *rootJ) override {
+		json_t *beatsPerBarJ = json_object_get(rootJ,"beatsPerBar");
+		if(beatsPerBarJ){
+			beatsPerBar = json_integer_value(beatsPerBarJ);
+		}
+		json_t *barsPerPhraseJ = json_object_get(rootJ,"barsPerPhrase");
+		if(barsPerPhraseJ){
+			barsPerPhrase = json_integer_value(barsPerPhraseJ);
+		}
+
+		for(int i = 0 ; i < 8; i++){
+			json_t *textJ = json_object_get(rootJ, "text"+ i);
+			if (textJ)
+			textField[i]->text = json_string_value(textJ);
+		}
+	}
+
+
+	void onReset() override{
+		resetModule();
+		for(int i = 0 ; i < 8; i++){
+			textField[i]->text = "";
+		}
+	}
+
 
 	struct Component{
 		SchmittTrigger armButtonTrigger;
