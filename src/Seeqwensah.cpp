@@ -3,10 +3,13 @@
 * Musical timings will be based on Phrase, Bar, Beat.
 *
 */
-//test
+
 #include "UL.hpp"
 #include "dsp/digital.hpp"
 #include "rack.hpp"
+
+
+//Module works best with plugins which don't play first note on reset. 
 
 
 
@@ -68,10 +71,15 @@ TextField* textField [8];
 	SchmittTrigger barLengthDownButton;
 	SchmittTrigger phraseLengthUpButton;
 	SchmittTrigger phraseLengthDownButton;
+
+
+	
     bool isBeat = false ; //will be true for every clock pulse input
 	bool isReset = false;
 
 	bool isRunning = false;
+
+	bool veryFirst = true; //used to skip first beat, matches sequencers that skip the first clock cycle
 	// Counts will be used for internal logic, displays will be for graphics
 	int beatCount = 1;
 	int beatDisplay = 0;
@@ -83,6 +91,34 @@ TextField* textField [8];
 	int barsPerPhrase = 8; //default
 	float deltaTime = 0;
 	int totalBeats = 0;
+
+
+
+	struct Component{
+		SchmittTrigger armButtonTrigger;
+		SchmittTrigger armInputTrigger;
+		SchmittTrigger clockTrigger;
+		SchmittTrigger armBar;
+		SchmittTrigger armPhrase;
+		SchmittTrigger resetOutOnOff;
+
+		PulseGenerator pulseOut;
+		PulseGenerator resetPulseOut;
+		PulseGenerator globalReset;
+
+		bool isFirst = true;
+		bool isArmed = false;
+		bool armButton = false;
+		bool armInput = false;
+		bool hasChosenBar = true; //default will be trigger on bar  
+		bool hasChosenPhrase = false;
+		bool openTrigger = false;
+		int count = 0;
+			
+	};
+	
+	Component components [8]; 
+	
 
 
 
@@ -114,45 +150,24 @@ TextField* textField [8];
 		for(int i = 0 ; i < 8; i++){
 			json_t *textJ = json_object_get(rootJ, "text"+ i);
 			if (textJ)
+
+
 			textField[i]->text = json_string_value(textJ);
 		}
 	}
 
 
 	void onReset() override{
-		isRunning = false;
-		lights[RUN_LIGHT].value = 0.0f;
+		deltaTime = engineGetSampleTime();
+
 		resetModule();
 		for(int i = 0 ; i < 8; i++){
 			textField[i]->text = "";
 		}
+
 	}
 
 
-	struct Component{
-		SchmittTrigger armButtonTrigger;
-		SchmittTrigger armInputTrigger;
-		SchmittTrigger clockTrigger;
-
-		SchmittTrigger armBar;
-		SchmittTrigger armPhrase;
-
-		SchmittTrigger resetOutOnOff;
-
-		PulseGenerator pulseOut;
-		PulseGenerator resetPulseOut;
- 
-		bool isArmed = false;
-		bool armButton = false;
-		bool armInput = false;
-		bool hasChosenBar = true; //default will be trigger on bar  
-		bool hasChosenPhrase = false;
-		bool openTrigger = false;
-			
-	};
-	
-	Component components [8]; 
-	
 
 
 	void setBar(int i){
@@ -177,14 +192,18 @@ TextField* textField [8];
 		components[i].armInput = 0.0f;
 	}
 	
-	void outputTriggerEngage(int i){				
+	void outputTriggerEngage(int i){			
+		components[i].resetPulseOut.trigger(1e-3f); 	
 		components[i].openTrigger = !components[i].openTrigger;
 		components[i].isArmed = false;
+		components[i].pulseOut.trigger(1e-3f); ///*********************
 		//Send pulse to reset Out;
-		components[i].resetPulseOut.trigger(1e-3f);
+		
 	}
 	
 	void resetModule(){
+		isRunning = false;
+		lights[RUN_LIGHT].value = 0.0f;
 		isRunning = false;
 		beatCount = 1; 
 		barCount = 1;
@@ -201,47 +220,52 @@ TextField* textField [8];
 	}
 	
 	void incrementBeat(){
-		barDisplay = barCount;
-		phraseDisplay = phraseCount;
-		beatCount++;
-		totalBeats++; 
-		beatDisplay = beatCount - 1; //prevents display from being off by one as it gets updated AFTER beat count incremement 
-		if (beatCount > beatsPerBar){
-			beatCount = 1;
-			barCount++;
-		}
-		if (barCount > barsPerPhrase){
-			barCount = 1;
-			phraseCount++;
-			if(phraseCount > MAX_PHRASE){
-				phraseCount = 1;
+
+		if(!veryFirst){ // skip clock
+
+			barDisplay = barCount;
+			phraseDisplay = phraseCount;
+			beatCount++;
+			totalBeats++; 
+			beatDisplay = beatCount - 1; //prevents display from being off by one as it gets updated AFTER beat count incremement 
+
+			if (beatCount > beatsPerBar){
+				beatCount = 1;
+				barCount++;
 			}
-		}
+			if (barCount > barsPerPhrase){
+				barCount = 1;
+				phraseCount++;
+				if(phraseCount > MAX_PHRASE){
+					phraseCount = 1;
+				}
+				}
+			}
+		veryFirst = false;
 	}
 
 };
 
 
 
-
-
-
 void Seeqwensah::step() {
 
-
 	deltaTime = engineGetSampleTime();
-
+	
 	//True if input to clock is high (receiving input from clock source) 			
 	isBeat = clockTrigger.process(inputs[MASTER_CLOCK].value);
 
 
+
 	for(int i = 0; i < 8 ; i++){
+		
+
 		// User selects to output on bar or phrase
 		if(components[i].armBar.process(params[ARM_BAR+i].value)){
-				setBar(i);
+			setBar(i);
 		}
 		if(components[i].armPhrase.process(params[ARM_PHRASE+i].value)){
-				setPhrase(i);	
+			setPhrase(i);	
 		}
 		// check if user has armed a component 
 		components[i].armButton = components[i].armButtonTrigger.process(params[ARM_PARAM+i].value);
@@ -259,26 +283,33 @@ void Seeqwensah::step() {
 		lights[ARM_PHRASE_LIGHTS + i].value = components[i].hasChosenPhrase;
 	}
 
+	
+
 	if(isRunning){
 		// Loop through all components 
 		for(int i = 0; i < 8; i++){
 			// if armed and user selected Phrase
 			if((barCount == 1 && beatCount == 1) &&  isBeat && components[i].hasChosenPhrase && components[i].isArmed){
 				outputTriggerEngage(i);
+		
+				
 			 }
 			//  if armed and user selected Bar
 			if((beatCount == 1) && isBeat && components[i].hasChosenBar && components[i].isArmed){
 				outputTriggerEngage(i);
+
 			}
 
+
 			if(components[i].openTrigger){
-				if(components[i].clockTrigger.process(inputs[CLOCKS_IN+ i].value)){
+				if(components[i].clockTrigger.process(inputs[CLOCKS_IN + i].value)){
 					outputs[CLOCKS_OUT+i].value = 10.0f;
 				}
 				else{
 					outputs[CLOCKS_OUT+i].value = 0.0f;
 				}
 			}
+
 			// Send reset pulse out if compenent begins/ends clock output
 			if(components[i].resetPulseOut.process(deltaTime)){
 				outputs[RESETS_OUT+i].value = 10.0f;
@@ -313,11 +344,6 @@ void Seeqwensah::step() {
 	}
 	lights[RESET_LIGHT].setBrightnessSmooth(resetTrigger.isHigh());
 	lights[RESET_LIGHT].setBrightnessSmooth(resetButton.isHigh());
-
-
-
-
-
 
 
 	//Check if user change length of bar/phrase
@@ -405,7 +431,7 @@ struct PhraseLengthDisplayWidget : TransparentWidget{
 
 struct SeeqwensahWidget : ModuleWidget {
 	SeeqwensahWidget(Seeqwensah *module) : ModuleWidget(module) {
-		setPanel(SVG::load(assetPlugin(plugin, "res/Seeqwensah.svg")));
+		setPanel(SVG::load(assetPlugin(plugin, "res/SeeqwensahGift.svg")));
 
 		addChild(Widget::create<ScrewSilver>(Vec(RACK_GRID_WIDTH, 0)));
 		addChild(Widget::create<ScrewSilver>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, 0)));
@@ -418,7 +444,7 @@ struct SeeqwensahWidget : ModuleWidget {
 
 		//Run
 		addParam(ParamWidget::create<LEDBezel>(Vec(120,12), module, Seeqwensah::RUNNING_PARAM, 0.0, 1.0, 0.0));
-		addChild(ModuleLightWidget::create<LEDBezelLight<RedLight>>(Vec(122,14), module, Seeqwensah::RUN_LIGHT));
+		addChild(ModuleLightWidget::create<LEDBezelLight<GreenLight>>(Vec(122,14), module, Seeqwensah::RUN_LIGHT));
 		addInput(Port::create<PJ301MPort>(Vec(119, 40), Port::INPUT, module, Seeqwensah::RUN_INPUT));
 
 		//Reset
