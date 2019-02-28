@@ -120,6 +120,8 @@ TextField* textField [8];
 
 
 	void onReset() override{
+		isRunning = false;
+		lights[RUN_LIGHT].value = 0.0f;
 		resetModule();
 		for(int i = 0 ; i < 8; i++){
 			textField[i]->text = "";
