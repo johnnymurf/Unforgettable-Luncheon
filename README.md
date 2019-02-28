@@ -3,7 +3,6 @@
 Modules for use with [VCV Rack](https://vcvrack.com/)
 
 ## Seeqwensah:
-![alt text](https://github.com/johnnymurf/Unforgettable-Luncheon/blob/master/res/full.png)
 
 The idea of the plugin is to sequence other sequencers, triggering them on the 1st beat of a bar or phrase. 
 
@@ -19,16 +18,13 @@ Useful in a live setting or just when you want to jam out.
 Please take a moment to read the manual.
 
 
-![alt text](https://github.com/johnnymurf/Unforgettable-Luncheon/blob/master/res/test.png)
-
-* Master Clock - This takes the beat of the clock.
+* Master Clock - This takes the beat of the master clock.
 
 * Reset - This resets the beat count and all componenets. 
 
 * Run - Turns the beat count on or off. 
 
 ### Seeqwensah has 8 components 
-![alt text](https://github.com/johnnymurf/Unforgettable-Luncheon/blob/master/res/componentmanual.png)
 
 * Each component as small a red light. It indicates if its on or off (outputting a signal or not). 
 
@@ -47,16 +43,10 @@ Please take a moment to read the manual.
     to use it to play a sequencer that doesn't require a clock input.
 
 
-### Example patch:
-
-![alt text](https://github.com/johnnymurf/Unforgettable-Luncheon/blob/master/res/example.png)
-
 # Bugs / weird behaviour
 Some sequencers don't reset to the start of their sequence missing the first beat, which can lead to annoying behaviour.
 Piano roll from RCM and Impromptu Modular's sequencers seem to work fine. 
 
-The only bug encountered so far is that it very very rarely will not keep the sequencers in time.
-This seems to only happen when reloading VCV rack and it shows the same patch as when it was closed.
-Arming/Disarming all modules tends to fix this. Its usually only one sequencer causing the problem.
-I'm not sure if its a problem with the module itself or something going on with VCV Rack.
-If anyone has any idea leave me know. 
+On restarting rack and reloading a patch things can get weird.
+This usually can be fixed by arming and disarming all components. 
+rom experience things tend to stay in time once thats done. 
