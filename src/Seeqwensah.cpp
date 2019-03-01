@@ -129,31 +129,51 @@ TextField* textField [8];
 
 		//Save Texts
 		for(int i = 0 ; i < 8; i++){
-			json_object_set_new(rootJ, "text" + i, json_string(textField[i]->text.c_str()));
+			json_object_set_new(rootJ, "text0", json_string(textField[0]->text.c_str()));
+			json_object_set_new(rootJ, "text1", json_string(textField[1]->text.c_str()));
+			json_object_set_new(rootJ, "text2", json_string(textField[2]->text.c_str()));
+			json_object_set_new(rootJ, "text3", json_string(textField[3]->text.c_str()));
+			json_object_set_new(rootJ, "text4", json_string(textField[4]->text.c_str()));
+			json_object_set_new(rootJ, "text5", json_string(textField[5]->text.c_str()));
+			json_object_set_new(rootJ, "text6", json_string(textField[6]->text.c_str()));
+			json_object_set_new(rootJ, "text7", json_string(textField[7]->text.c_str()));
 			
 		}
 
 		return rootJ;
 	}
 
-	void fromJson(json_t *rootJ) override {
+void fromJson(json_t *rootJ) override {
+
 		json_t *beatsPerBarJ = json_object_get(rootJ,"beatsPerBar");
 		if(beatsPerBarJ){
 			beatsPerBar = json_integer_value(beatsPerBarJ);
 		}
+
 		json_t *barsPerPhraseJ = json_object_get(rootJ,"barsPerPhrase");
 		if(barsPerPhraseJ){
 			barsPerPhrase = json_integer_value(barsPerPhraseJ);
 		}
+// wish i could make this more elegant
+		json_t *textJ0 = json_object_get(rootJ, "text0");
+		textField[0]->text = json_string_value(textJ0);
+		json_t *textJ1 = json_object_get(rootJ, "text1");
+		textField[1]->text = json_string_value(textJ1);
+		json_t *textJ2 = json_object_get(rootJ, "text2");
+		textField[2]->text = json_string_value(textJ2);
+		json_t *textJ3 = json_object_get(rootJ, "text3");
+		textField[3]->text = json_string_value(textJ3);
+		json_t *textJ4 = json_object_get(rootJ, "text4");
+		textField[4]->text = json_string_value(textJ4);
+		json_t *textJ5 = json_object_get(rootJ, "text5");
+		textField[5]->text = json_string_value(textJ5);
+		json_t *textJ6 = json_object_get(rootJ, "text6");
+		textField[6]->text = json_string_value(textJ6);
+		json_t *textJ7 = json_object_get(rootJ, "text7");
+		textField[7]->text = json_string_value(textJ7);
 
-		for(int i = 0 ; i < 8; i++){
-			json_t *textJ = json_object_get(rootJ, "text"+ i);
-			if (textJ)
-
-
-			textField[i]->text = json_string_value(textJ);
-		}
 	}
+	
 
 
 	void onReset() override{
