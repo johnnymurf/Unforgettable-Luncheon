@@ -41,12 +41,15 @@ Please take a moment to read the manual.
 * Trigger Out emits a pulse on the 1st beat of being turned on and last beat of turned off. 
     This is useful for reseting sequences to keep them in time. Also useful if you just want 
     to use it to play a sequencer that doesn't require a clock input.
+    *Current bug means a reset is sent out on number 00:00:00.
 
 
 # Bugs / weird behaviour
 Some sequencers don't reset to the start of their sequence missing the first beat, which can lead to annoying behaviour.
-Piano roll from RCM and Impromptu Modular's sequencers seem to work fine. 
+Piano roll from RCM, Impromptu Modular's, and Cf's sequencers seem to work fine. 
 
-On restarting rack and reloading a patch things can get weird.
-This usually can be fixed by arming and disarming all components. 
-rom experience things tend to stay in time once thats done. 
+On starting the module things can get a small bit weird. 
+Trigger out buttons are intended for reseting on the start clock out to sequencers, so they should be sent to a sequencer reset input.
+Annoyingly a reset triggers on 00:00:00 as well as on 00:00:01. This is actually fine for must sequencers but for those that don't
+take a clock (those that just play), they'll be turned on and then off. The temporary solution to this is
+just wait until the beginning of the next phrase before arming. This will be fixed soon, but requires a bit of a refactoring of code.

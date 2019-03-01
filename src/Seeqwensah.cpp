@@ -236,9 +236,7 @@ void fromJson(json_t *rootJ) override {
 	}
 	
 	void incrementBeat(){
-		if(veryFirst){
-			printf("test\n");
-		}
+
 
 		if(!veryFirst){ // skip clock
 
@@ -317,13 +315,13 @@ void Seeqwensah::step() {
 
 
 	
-			if((barCount == 1 && beatCount == 1) &&  isBeat && components[i].hasChosenPhrase && components[i].isArmed){
+			if((barCount == 1 && beatCount == 1) &&  isBeat && components[i].hasChosenPhrase && components[i].isArmed && !veryFirst){
 				outputTriggerEngage(i);
 				components[i].resetPulseOut.trigger(1e-3f); 
 				
 			 }
 		
-			if((beatCount == 1) && isBeat && components[i].hasChosenBar && components[i].isArmed){
+			if((beatCount == 1) && isBeat && components[i].hasChosenBar && components[i].isArmed && !veryFirst){
 				outputTriggerEngage(i);
 				components[i].resetPulseOut.trigger(1e-3f); 
 
@@ -337,7 +335,7 @@ void Seeqwensah::step() {
 
 				if(components[i].pulseOut.process(deltaTime) && !veryFirst && beatDisplay !=0){
 				//	printf("Test\n\n");
-					outputs[RESETS_OUT+i].value = 10.0f;
+				//	outputs[RESETS_OUT+i].value = 10.0f;
 					outputs[CLOCKS_OUT+i].value = 10.0f;
 				}
 				else{
