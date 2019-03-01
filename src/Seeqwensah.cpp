@@ -128,7 +128,7 @@ TextField* textField [8];
 		json_object_set_new(rootJ, "barsPerPhrase",json_integer(barsPerPhrase));
 
 		//Save Texts
-		for(int i = 0 ; i < 8; i++){
+		
 			json_object_set_new(rootJ, "text0", json_string(textField[0]->text.c_str()));
 			json_object_set_new(rootJ, "text1", json_string(textField[1]->text.c_str()));
 			json_object_set_new(rootJ, "text2", json_string(textField[2]->text.c_str()));
@@ -138,9 +138,7 @@ TextField* textField [8];
 			json_object_set_new(rootJ, "text6", json_string(textField[6]->text.c_str()));
 			json_object_set_new(rootJ, "text7", json_string(textField[7]->text.c_str()));
 			
-		}
-
-		return rootJ;
+			return rootJ;
 	}
 
 void fromJson(json_t *rootJ) override {
