@@ -104,9 +104,8 @@ TextField* textField [8];
 
 		PulseGenerator pulseOut;
 		PulseGenerator resetPulseOut;
-		PulseGenerator globalReset;
 
-		bool isFirst = true;
+
 		bool isArmed = false;
 		bool armButton = false;
 		bool armInput = false;
@@ -192,13 +191,12 @@ TextField* textField [8];
 		components[i].armInput = 0.0f;
 	}
 	
-	void outputTriggerEngage(int i){			
-		components[i].resetPulseOut.trigger(1e-3f); 	
+	void outputTriggerEngage(int i){		
+		
 		components[i].openTrigger = !components[i].openTrigger;
 		components[i].isArmed = false;
-		components[i].pulseOut.trigger(1e-3f); ///*********************
-		//Send pulse to reset Out;
-		
+		components[i].pulseOut.trigger(2e-3f); ///*********************
+
 	}
 	
 	void resetModule(){
@@ -220,6 +218,9 @@ TextField* textField [8];
 	}
 	
 	void incrementBeat(){
+		if(veryFirst){
+			printf("test\n");
+		}
 
 		if(!veryFirst){ // skip clock
 
@@ -239,8 +240,8 @@ TextField* textField [8];
 				if(phraseCount > MAX_PHRASE){
 					phraseCount = 1;
 				}
-				}
 			}
+		}
 		veryFirst = false;
 	}
 
@@ -288,21 +289,28 @@ void Seeqwensah::step() {
 	if(isRunning){
 		// Loop through all components 
 		for(int i = 0; i < 8; i++){
-			// if armed and user selected Phrase
+	
 			if((barCount == 1 && beatCount == 1) &&  isBeat && components[i].hasChosenPhrase && components[i].isArmed){
 				outputTriggerEngage(i);
-		
+				components[i].resetPulseOut.trigger(1e-3f); 
 				
 			 }
-			//  if armed and user selected Bar
+		
 			if((beatCount == 1) && isBeat && components[i].hasChosenBar && components[i].isArmed){
 				outputTriggerEngage(i);
+				components[i].resetPulseOut.trigger(1e-3f); 
 
 			}
 
 
 			if(components[i].openTrigger){
-				if(components[i].clockTrigger.process(inputs[CLOCKS_IN + i].value)){
+				if(inputs[CLOCKS_IN + i].value){
+					components[i].pulseOut.trigger(1e-3f);
+				}
+
+				if(components[i].pulseOut.process(deltaTime) && !veryFirst){
+				//	printf("Test\n\n");
+			
 					outputs[CLOCKS_OUT+i].value = 10.0f;
 				}
 				else{
