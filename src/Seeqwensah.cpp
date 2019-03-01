@@ -260,7 +260,8 @@ void fromJson(json_t *rootJ) override {
 				}
 			}
 		}
-		veryFirst = false;
+	
+			veryFirst = false;
 	}
 
 };
@@ -307,6 +308,14 @@ void Seeqwensah::step() {
 	if(isRunning){
 		// Loop through all components 
 		for(int i = 0; i < 8; i++){
+
+			//Temporary fix
+			// shitty hack to get sequencers to stay in time from beginning, real issue is reset on the very first master clock input that shouldnt occur.  
+			 if(phraseDisplay == 1 && barDisplay == 1 && beatDisplay == 1){
+				components[i].resetPulseOut.trigger(1e-3f);
+			 }
+
+
 	
 			if((barCount == 1 && beatCount == 1) &&  isBeat && components[i].hasChosenPhrase && components[i].isArmed){
 				outputTriggerEngage(i);
@@ -326,9 +335,9 @@ void Seeqwensah::step() {
 					components[i].pulseOut.trigger(1e-3f);
 				}
 
-				if(components[i].pulseOut.process(deltaTime) && !veryFirst){
+				if(components[i].pulseOut.process(deltaTime) && !veryFirst && beatDisplay !=0){
 				//	printf("Test\n\n");
-			
+					outputs[RESETS_OUT+i].value = 10.0f;
 					outputs[CLOCKS_OUT+i].value = 10.0f;
 				}
 				else{
@@ -337,7 +346,7 @@ void Seeqwensah::step() {
 			}
 
 			// Send reset pulse out if compenent begins/ends clock output
-			if(components[i].resetPulseOut.process(deltaTime)){
+			if(components[i].resetPulseOut.process(deltaTime)  && !veryFirst){
 				outputs[RESETS_OUT+i].value = 10.0f;
 			}
 			if(!components[i].resetPulseOut.process(deltaTime)){
